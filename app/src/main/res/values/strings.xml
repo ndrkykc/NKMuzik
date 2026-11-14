@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NK Müzik</string>
+
+    <!-- Widget -->
+    <string name="widget_media_title">NK Müzik Çalar</string>
+    <string name="widget_default_title_artist">Medya Adı - Sanatçı</string>
+    <string name="widget_play_pause">Oynat / Duraklat</string>
+    <string name="widget_previous">Önceki</string>
+    <string name="widget_next">Sonraki</string>
+
+    <!-- General / Common -->
+    <string name="cancel">İptal</string>
+    <string name="ok">Tamam</string>
+    <string name="save">Kaydet</string>
+    <string name="delete">Sil</string>
+    <string name="edit">Düzenle</string>
+    <string name="close">Kapat</string>
+    <string name="back">Geri</string>
+    <string name="search">Ara...</string>
+    <string name="more">Daha Fazla</string>
+    <string name="info">Bilgi</string>
+    <string name="share">Paylaş</string>
+    <string name="rename">Yeniden Adlandır</string>
+    <string name="discover">Keşfet</string>
+    <string name="downloaded">İndirildi</string>
+    <string name="version">Versiyon %1$s</string>
+    <string name="clear">Temizle</string>
+
+    <!-- Navigation / Bottom Bar -->
+    <string name="nav_home">Ana Sayfa</string>
+    <string name="nav_library">Kitaplık</string>
+    <string name="nav_search">Ara</string>
+    <string name="nav_settings">Ayarlar</string>
+    <string name="nav_equalizer">Ekolayzer</string>
+
+    <!-- Home Screen -->
+    <string name="section_all">Tümü</string>
+    <string name="section_favorites">Favoriler</string>
+    <string name="section_playlists">Çalma Listesi</string>
+    <string name="section_online">Çevrimiçi</string>
+    <string name="search_hint_all">Şarkı, sanatçı veya albüm ara...</string>
+    <string name="search_hint_favorites">Favorilerde ara...</string>
+    <string name="search_hint_playlists">Çalma listelerinde ara...</string>
+    <string name="search_hint_online">%1$s\'da online ara...</string>
+    <string name="tab_songs">Şarkılar</string>
+    <string name="tab_artists">Sanatçılar</string>
+    <string name="tab_albums">Albümler</string>
+    <string name="tab_folders">Klasörler</string>
+    <string name="create_playlist">Yeni Çalma Listesi Oluştur</string>
+    <string name="create_playlist_title">Yeni Çalma Listesi</string>
+    <string name="playlist_name_label">Çalma Listesi Adı</string>
+    <string name="no_playlists_yet">Henüz çalma listesi bulunmuyor.</string>
+    <string name="empty_playlist_message">Bu çalma listesinde henüz şarkı yok.</string>
+    <string name="empty_favorites_message">Favorilere eklenen parça bulunmuyor</string>
+    <string name="empty_songs_message">Henüz müzik bulunmuyor</string>
+    <string name="rename_playlist">Çalma Listesini Yeniden Adlandır</string>
+    <string name="delete_playlist">Çalma Listesini Sil</string>
+    <string name="delete_playlist_confirm">\"%1$s\" isimli çalma listesini silmek istediğinizden emin misiniz?</string>
+    <string name="song_count">%1$d şarkı</string>
+    <string name="track_count">%1$d parça</string>
+    <string name="selected_count">%1$d seçildi</string>
+    <string name="play_all">Tümünü Oynat</string>
+    <string name="online_search_prompt">%1$s\'da müzik aramak için üstteki arama çubuğunu kullanın.</string>
+
+    <!-- Overflow Menu & Track Actions -->
+    <string name="action_play">Oynat</string>
+    <string name="action_pause">Duraklat</string>
+    <string name="action_add_to_queue">Sıraya Ekle</string>
+    <string name="action_add_to_playlist">Çalma Listesine Ekle</string>
+    <string name="action_remove_from_playlist">Çalma Listesinden Çıkar</string>
+    <string name="action_add_to_favorites">Favorilere Ekle</string>
+    <string name="action_remove_from_favorites">Favorilerden Çıkar</string>
+    <string name="action_share">Paylaş</string>
+    <string name="action_info">Bilgi</string>
+    <string name="action_delete">Sil</string>
+    <string name="action_download">İndir</string>
+    <string name="action_listen">Dinle</string>
+
+    <!-- Library Screen -->
+    <string name="library_title">Kitaplık</string>
+    <string name="library_songs_tab">Şarkılar (%1$d)</string>
+    <string name="library_artists_tab">Sanatçılar (%1$d)</string>
+    <string name="library_playlists_tab">Listeler (%1$d)</string>
+    <string name="no_music_found">Müzik bulunamadı.</string>
+    <string name="no_artist_found">Sanatçı bulunamadı.</string>
+    <string name="downloading_music">Müzik İndiriliyor...</string>
+
+    <!-- Media Action Bottom Sheet -->
+    <string name="media_action_title">Şarkı Seçenekleri</string>
+    <string name="audio_quality">128 kbps M4A (AAC)</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="theme_setting">Tema Seçimi</string>
+    <string name="select_theme">Tema Seçin</string>
+    <string name="theme_dark">Karanlık Tema</string>
+    <string name="theme_light">Açık Tema (Beyaz)</string>
+    <string name="theme_system">Sistem Varsayılanı</string>
+    <string name="language_setting">Dil / Language</string>
+    <string name="select_language">Dil Seçimi</string>
+    <string name="lang_turkish">Türkçe</string>
+    <string name="lang_english">English</string>
+    <string name="dynamic_colors_cover">Dinamik Renkler (Kapak Görseli Odaklı)</string>
+    <string name="dynamic_colors_material">Dinamik Renkler (Material You)</string>
+    <string name="persistent_notifications">Kalıcı Bildirimlere İzin Ver</string>
+    <string name="setting_enabled">Açık</string>
+    <string name="setting_disabled">Kapalı</string>
+    <string name="equalizer">Ekolayzer (Equalizer)</string>
+    <string name="equalizer_open">Ekolayzerı Aç</string>
+    <string name="app_version">NK Müzik %1$s</string>
+
+    <!-- Dialogs & Confirmations -->
+    <string name="track_info_title">Çalma Listesi Bilgisi</string>
+    <string name="song_info_title">Şarkı Bilgisi</string>
+    <string name="track_title_label">Şarkı Adı</string>
+    <string name="track_artist_label">Sanatçı</string>
+    <string name="track_duration_label">Süre</string>
+    <string name="track_path_label">Dosya Yolu</string>
+    <string name="delete_track_title">Şarkıyı Sil</string>
+    <string name="delete_track_confirm">\"%1$s\" şarkısını silmek istediğinizden emin misiniz?</string>
+    <string name="delete_selected_favorites_title">Seçilen Favori Parçaları Sil</string>
+    <string name="delete_selected_favorites_confirm">%1$d favori parçayı silmek istediğinize emin misiniz?</string>
+
+    <string name="single_track">1 parça</string>
+    <string name="sort_by_name">Ada Göre</string>
+    <string name="sort_by_date_added">Eklenme Sırasına Göre</string>
+    <string name="sort_by_play_count">En Çok Dinlenene Göre</string>
+    <string name="sort_title">Sırala</string>
+    <string name="filter_title">Filtrele</string>
+    <string name="playlist_created_at">Oluşturulma Tarihi: %1$s</string>
+    <string name="playlist_track_count_info">Parça Sayısı: %1$s</string>
+    <string name="playlist_name_info">Çalma Listesi Adı: %1$s</string>
+    <string name="equalizer_and_sound_effects">Ekolayzer &amp; Ses Efektleri</string>
+    <string name="stop_at_end_of_song">Şarkı Sonunda Durdur</string>
+    <string name="cancel_timer">Zamanlayıcıyı İptal Et</string>
+    <string name="stop_after_minutes">%1$d Dakika Sonra Durdur</string>
+    <string name="loading_lyrics">Şarkı sözleri yükleniyor...</string>
+    <string name="empty_queue">Sıra boş</string>
+    <string name="action_remove_from_playlist_item">Çalma Listesinden Kaldır</string>
+    <string name="action_remove_from_queue">Oynatma listesinden kaldır</string>
+    <string name="options">Seçenekler</string>
+    <string name="play_mode">Oynatma Modu</string>
+    <string name="previous_track">Önceki</string>
+    <string name="next_track">Sonraki</string>
+    <string name="toggle_favorite">Favorilere Ekle/Çıkar</string>
+    <string name="online_search_idle_prompt">Dinlemek istediğiniz şarkıyı arayın</string>
+
+    <!-- Player / Now Playing -->
+    <string name="now_playing">Şimdi Çalıyor</string>
+    <string name="up_next">Sıradaki Parçalar</string>
+    <string name="sleep_timer">Uyku Zamanlayıcı</string>
+    <string name="sleep_timer_off">Kapalı</string>
+    <string name="sleep_timer_minutes">%1$d Dakika</string>
+    <string name="lyrics">Şarkı Sözleri</string>
+    <string name="no_lyrics_found">Şarkı sözü bulunamadı</string>
+
+    <!-- Online Search Screen -->
+    <string name="search_online_title">Online Arama</string>
+    <string name="search_online_placeholder">Çevrimiçi müzik ara...</string>
+    <string name="search_history">Arama Geçmişi</string>
+    <string name="clear_history">Geçmişi Temizle</string>
+    <string name="trending_music">Trend Müzikler</string>
+
+    <!-- Equalizer Screen -->
+    <string name="equalizer_title">Ekolayzer</string>
+    <string name="preset_custom">Özel</string>
+    <string name="preset_flat">Düz</string>
+    <string name="preset_pop">Pop</string>
+    <string name="preset_rock">Rock</string>
+    <string name="preset_jazz">Caz</string>
+    <string name="preset_classical">Klasik</string>
+    <string name="preset_dance">Dans</string>
+    <string name="bass_boost">Bas Güçlendirme</string>
+    <string name="virtualizer">Sanallaştırıcı</string>
+    <string name="press_again_to_exit">Çıkmak için tekrar basın</string>
+    <string name="downloaded_album_name">İndirilenler</string>
+    <string name="list_view">Liste Görünümü</string>
+    <string name="grid_view">2\'li Kare Görünüm</string>
+</resources>

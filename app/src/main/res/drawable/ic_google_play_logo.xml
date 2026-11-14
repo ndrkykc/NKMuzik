@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp"
+    android:height="26dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Left segment -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#000000"
+        android:strokeWidth="0.4"
+        android:pathData="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.61 3,21.09 3,20.5Z"/>
+    <!-- Right arrow tip segment -->
+    <path
+        android:fillColor="#B0B0B0"
+        android:strokeColor="#000000"
+        android:strokeWidth="0.4"
+        android:pathData="M16.81,15.12L13.69,12L16.81,8.88L20.5,10.98C21.17,11.36 21.17,12.64 20.5,13.02L16.81,15.12Z"/>
+    <!-- Top fold segment -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:strokeColor="#000000"
+        android:strokeWidth="0.4"
+        android:pathData="M13.69,12L3.84,2.15C4.01,2.06 4.21,2 4.43,2C4.73,2 5.03,2.15 5.25,2.28L16.81,8.88L13.69,12Z"/>
+    <!-- Bottom fold segment -->
+    <path
+        android:fillColor="#888888"
+        android:strokeColor="#000000"
+        android:strokeWidth="0.4"
+        android:pathData="M13.69,12L16.81,15.12L5.25,21.72C5.03,21.85 4.73,22 4.43,22C4.21,22 4.01,21.94 3.84,21.85L13.69,12Z"/>
+</vector>

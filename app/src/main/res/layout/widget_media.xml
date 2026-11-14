@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="72dp"
+    android:background="@drawable/bg_widget_container_dynamic"
+    android:clipToOutline="true"
+    android:baselineAligned="false"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="0dp">
+
+    <!-- Far Left: Full Height Album Artwork (72dp x match_parent, ZERO Top/Bottom Padding) -->
+    <ImageView
+        android:id="@+id/widget_iv_artwork"
+        android:layout_width="72dp"
+        android:layout_height="match_parent"
+        android:layout_margin="0dp"
+        android:padding="0dp"
+        android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop"
+        android:src="@drawable/placeholder" />
+
+    <!-- Right Side Area (Divided into Top Half & Bottom Half) -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp">
+
+        <!-- Top Half: Single Line "Medya Adı - Sanatçı", Centered -->
+        <TextView
+            android:id="@+id/widget_tv_title"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="@string/widget_default_title_artist"
+            android:textAlignment="center"
+            android:textColor="#E0E0E0"
+            android:textSize="15sp"
+            android:textStyle="normal" />
+
+        <!-- Bottom Half: Horizontal Row with 4 Flat Control Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:baselineAligned="false"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/widget_prev"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="9.6dp"
+                android:layout_marginEnd="9.6dp"
+                android:clickable="true"
+                android:contentDescription="@string/widget_previous"
+                android:focusable="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_widget_previous" />
+
+            <ImageView
+                android:id="@+id/widget_play_pause"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="9.6dp"
+                android:layout_marginEnd="9.6dp"
+                android:clickable="true"
+                android:contentDescription="@string/widget_play_pause"
+                android:focusable="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_widget_play_flat" />
+
+            <ImageView
+                android:id="@+id/widget_next"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="9.6dp"
+                android:layout_marginEnd="9.6dp"
+                android:clickable="true"
+                android:contentDescription="@string/widget_next"
+                android:focusable="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_widget_next" />
+
+            <ImageView
+                android:id="@+id/widget_favorite"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="9.6dp"
+                android:layout_marginEnd="9.6dp"
+                android:clickable="true"
+                android:contentDescription="@string/toggle_favorite"
+                android:focusable="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_widget_favorite_border" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>
