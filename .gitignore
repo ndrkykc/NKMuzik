@@ -10,9 +10,13 @@ app/google-services.json
 *.jks
 secrets.properties
 
-# Gradle & IDE files
+# Gradle & IDE / Agent files
 *.iml
 .gradle
+.agent/
+/.agent/
+.artifacts/
+/.artifacts/
 /local.properties
 local.properties
 /.idea/
