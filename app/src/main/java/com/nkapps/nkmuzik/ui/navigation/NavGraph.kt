@@ -8,7 +8,7 @@ import androidx.navigation.compose.composable
 import com.nkapps.nkmuzik.ui.equalizer.EqualizerScreen
 import com.nkapps.nkmuzik.ui.home.HomeScreen
 import com.nkapps.nkmuzik.ui.library.LibraryScreen
-import com.nkapps.nkmuzik.ui.search.SearchScreen
+import com.nkapps.nkmuzik.ui.search.OnlineSearchScreen
 import com.nkapps.nkmuzik.ui.search.SearchViewModel
 import com.nkapps.nkmuzik.ui.settings.SettingsScreen
 
@@ -32,7 +32,7 @@ fun AppNavHost(
             )
         }
         composable(Screen.Search.route) {
-            SearchScreen(viewModel = viewModel)
+            OnlineSearchScreen(viewModel = viewModel)
         }
         composable(Screen.Settings.route) {
             SettingsScreen(
