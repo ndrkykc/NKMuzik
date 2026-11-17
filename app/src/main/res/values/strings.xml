@@ -177,4 +177,9 @@
     <string name="downloaded_album_name">İndirilenler</string>
     <string name="list_view">Liste Görünümü</string>
     <string name="grid_view">2\'li Kare Görünüm</string>
+
+    <!-- Updates and Visual Settings -->
+    <string name="visual_settings_title">Görsel Ayarlar</string>
+    <string name="visual_settings_desc">Tema, Kapak Görseli ve Dinamik Renkler (%1$s)</string>
+    <string name="check_for_updates">Güncellemeleri Kontrol Et</string>
 </resources>

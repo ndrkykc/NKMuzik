@@ -68,7 +68,7 @@ fun PermissionHandler(
 ) {
     val context = LocalContext.current
     var hasPermissions by remember { mutableStateOf(checkPermissionsGranted(context)) }
-    var showDialog by remember { mutableStateOf(!hasPermissions) }
+    var showDialog by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -83,7 +83,8 @@ fun PermissionHandler(
 
     LaunchedEffect(Unit) {
         if (!hasPermissions) {
-            permissionLauncher.launch(getRequiredPermissions())
+            kotlinx.coroutines.delay(2000) // 2 saniye gecikme
+            showDialog = true
         } else {
             onPermissionsGranted()
         }
@@ -162,7 +163,10 @@ fun PermissionHandler(
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { showDialog = false }
+                    onClick = { 
+                        showDialog = false
+                        onPermissionsGranted() // Uyarıyı kapatınca uygulamanın açılmasına izin ver
+                    }
                 ) {
                     Text("Daha Sonra")
                 }
@@ -170,5 +174,7 @@ fun PermissionHandler(
         )
     }
 
-    content()
+    if (!showDialog) {
+        content()
+    }
 }

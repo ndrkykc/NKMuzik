@@ -75,6 +75,8 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
 import javax.inject.Inject
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.nkapps.nkmuzik.ui.common.FastScrollbar
 
 data class ArtistOrAlbumGroup(
     val name: String,
@@ -88,6 +90,7 @@ fun LibraryScreen(
     searchViewModel: SearchViewModel = hiltViewModel(),
     libraryViewModel: LibraryViewModel = hiltViewModel()
 ) {
+    val listState = rememberLazyListState()
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
@@ -206,12 +209,14 @@ fun LibraryScreen(
                             Text(stringResource(R.string.no_music_found), color = MaterialTheme.colorScheme.outline)
                         }
                     } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(bottom = 80.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(activeDownloads) { workInfo ->
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                state = listState,
+                                contentPadding = PaddingValues(bottom = 80.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(activeDownloads) { workInfo ->
                                 val title = workInfo.outputData.getString("title") ?: stringResource(R.string.downloading_music)
                                 val progress = workInfo.progress.getInt("progress", 0)
                                 val cardBg = MaterialTheme.colorScheme.surfaceContainer
@@ -263,11 +268,21 @@ fun LibraryScreen(
                                 )
                             }
                         }
+                        
+                        if (filteredTracks.size > 20) {
+                            FastScrollbar(
+                                listState = listState,
+                                items = filteredTracks,
+                                itemToChar = { (it as LocalTrack).title.firstOrNull() ?: '#' },
+                                modifier = Modifier.align(Alignment.CenterEnd)
+                            )
+                        }
                     }
                 }
+            } // closes 0 -> {
 
-                1 -> {
-                    if (artistGroups.isEmpty()) {
+            1 -> {
+                if (artistGroups.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text(stringResource(R.string.no_artist_found), color = MaterialTheme.colorScheme.outline)
                         }

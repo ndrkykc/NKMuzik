@@ -14,4 +14,5 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object Library : Screen("library", "Kütüphane", Icons.Filled.LibraryMusic)
     object Settings : Screen("settings", "Ayarlar", Icons.Filled.Settings)
     object Equalizer : Screen("equalizer", "Ekolayzer", Icons.Filled.Equalizer)
+    object VisualSettings : Screen("visual_settings", "Görsel Ayarlar", Icons.Filled.Settings)
 }

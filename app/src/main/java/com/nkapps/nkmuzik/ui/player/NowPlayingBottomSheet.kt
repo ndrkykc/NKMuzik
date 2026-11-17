@@ -259,6 +259,17 @@ fun NowPlayingBottomSheet(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val context = LocalContext.current
+
+                    // Sleep Timer Quick Access Button
+                    IconButton(onClick = { showSleepTimerDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Timer,
+                            contentDescription = stringResource(R.string.sleep_timer),
+                            modifier = Modifier.size(28.dp),
+                            tint = if (sleepTimerMode !is SleepTimerMode.Off) yellowColor else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
                     IconButton(onClick = {
                         CastManager.showCastDialog(context)
                     }) {

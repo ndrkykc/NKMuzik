@@ -39,11 +39,23 @@ fun AppNavHost(
                 onBack = { navController.popBackStack() },
                 onNavigateToEqualizer = {
                     navController.navigate(Screen.Equalizer.route)
+                },
+                onNavigateToVisualSettings = {
+                    navController.navigate(Screen.VisualSettings.route)
+                },
+                onCheckForUpdates = {
+                    val activity = navController.context as? com.nkapps.nkmuzik.MainActivity
+                    activity?.checkUpdatesManually()
                 }
             )
         }
         composable(Screen.Equalizer.route) {
             EqualizerScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.VisualSettings.route) {
+            com.nkapps.nkmuzik.ui.settings.VisualSettingsScreen(
                 onBack = { navController.popBackStack() }
             )
         }

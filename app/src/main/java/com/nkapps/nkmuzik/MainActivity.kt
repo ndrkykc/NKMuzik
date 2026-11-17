@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.lifecycleScope
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowInsetsControllerCompat
 import com.nkapps.nkmuzik.ui.main.MainScreen
@@ -34,9 +35,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        splashScreen.setKeepOnScreenCondition { false }
+        var keepSplash = true
+        splashScreen.setKeepOnScreenCondition { keepSplash }
 
         super.onCreate(savedInstanceState)
+        
+        // SplashScreen'in 1 saniye (1000 ms) boyunca ekranda kalmasını sağlar
+        val scope = (this as androidx.lifecycle.LifecycleOwner).lifecycleScope
+        scope.launch {
+            kotlinx.coroutines.delay(1000)
+            keepSplash = false
+        }
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(
                 android.graphics.Color.TRANSPARENT,
@@ -82,6 +91,14 @@ class MainActivity : AppCompatActivity() {
                         gitHubUpdateManager.dismissUpdate()
                     }
                 )
+            }
+        }
+    }
+
+    fun checkUpdatesManually() {
+        if (::gitHubUpdateManager.isInitialized) {
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                gitHubUpdateManager.checkForUpdates(showToastIfUpToDate = true)
             }
         }
     }

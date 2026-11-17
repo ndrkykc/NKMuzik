@@ -263,7 +263,20 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
                         }
                         is SearchUiState.Error -> {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(state.message, color = MaterialTheme.colorScheme.error)
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Error",
+                                        modifier = Modifier.size(64.dp),
+                                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(state.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Button(onClick = { viewModel.performSearch(searchQuery) }) {
+                                        Text("Tekrar Dene")
+                                    }
+                                }
                             }
                         }
                         is SearchUiState.Success -> {

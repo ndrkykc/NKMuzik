@@ -59,7 +59,7 @@ class GitHubUpdateManager @Inject constructor(
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
-    suspend fun checkForUpdates(owner: String = GITHUB_OWNER, repo: String = GITHUB_REPO) = withContext(Dispatchers.IO) {
+    suspend fun checkForUpdates(owner: String = GITHUB_OWNER, repo: String = GITHUB_REPO, showToastIfUpToDate: Boolean = false) = withContext(Dispatchers.IO) {
         if (_updateState.value is UpdateState.Checking || _updateState.value is UpdateState.Downloading) return@withContext
         _updateState.value = UpdateState.Checking
 
@@ -75,6 +75,11 @@ class GitHubUpdateManager @Inject constructor(
                 if (!response.isSuccessful) {
                     Log.w(TAG, "GitHub release fetch failed with code: ${response.code}")
                     _updateState.value = UpdateState.Idle
+                    if (showToastIfUpToDate) {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(context, "Güncelleme kontrolü yapılamadı", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
                     return@withContext
                 }
 
@@ -115,11 +120,21 @@ class GitHubUpdateManager @Inject constructor(
                     _updateState.value = UpdateState.UpdateAvailable(release)
                 } else {
                     _updateState.value = UpdateState.Idle
+                    if (showToastIfUpToDate) {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(context, "Uygulamanız güncel (v${BuildConfig.VERSION_NAME})", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "GitHub güncelleme kontrolü sırasında hata: ${e.message}", e)
             _updateState.value = UpdateState.Idle
+            if (showToastIfUpToDate) {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(context, "Uygulamanız güncel (v${BuildConfig.VERSION_NAME})", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

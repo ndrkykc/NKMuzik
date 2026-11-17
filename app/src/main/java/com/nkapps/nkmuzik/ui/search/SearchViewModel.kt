@@ -183,7 +183,8 @@ class SearchViewModel @Inject constructor(
     private val searchLocalTracksUseCase: com.nkapps.nkmuzik.domain.usecase.SearchLocalTracksUseCase,
     private val searchOnlineTracksUseCase: com.nkapps.nkmuzik.domain.usecase.SearchOnlineTracksUseCase,
     private val getSearchSuggestionsUseCase: com.nkapps.nkmuzik.domain.usecase.GetSearchSuggestionsUseCase,
-    private val rankSearchResultsUseCase: com.nkapps.nkmuzik.domain.usecase.RankSearchResultsUseCase
+    private val rankSearchResultsUseCase: com.nkapps.nkmuzik.domain.usecase.RankSearchResultsUseCase,
+    private val networkConnectivityObserver: com.nkapps.nkmuzik.utils.NetworkConnectivityObserver
 ) : AndroidViewModel(context as Application) {
 
     val enableOnlineFeatures: StateFlow<Boolean> = remoteConfigManager.enableOnlineFeatures
@@ -1086,6 +1087,15 @@ class SearchViewModel @Inject constructor(
     fun performSearch(query: String) {
         logDebug("OnlineSearch", "SearchViewModel -> executing search query: '$query'")
         dismissSuggestions()
+
+        if (!networkConnectivityObserver.isCurrentlyConnected()) {
+            _isSearchingOnline.value = false
+            _onlineResults.value = emptyList()
+            _uiState.value = SearchUiState.Error("İnternet bağlantısı yok")
+            logDebug("OnlineSearch", "SearchViewModel -> UI state transition: Error(msg='İnternet bağlantısı yok')")
+            return
+        }
+
         _isSearchingOnline.value = true
         _uiState.value = SearchUiState.Loading
         logDebug("OnlineSearch", "SearchViewModel -> UI state transition: Loading")

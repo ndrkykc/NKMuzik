@@ -177,4 +177,9 @@
     <string name="downloaded_album_name">Downloads</string>
     <string name="list_view">List View</string>
     <string name="grid_view">Grid View</string>
+
+    <!-- Updates and Visual Settings -->
+    <string name="visual_settings_title">Visual Settings</string>
+    <string name="visual_settings_desc">Theme, Cover Image and Dynamic Colors (%1$s)</string>
+    <string name="check_for_updates">Check for Updates</string>
 </resources>

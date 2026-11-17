@@ -45,10 +45,12 @@ import com.nkapps.nkmuzik.ui.theme.ThemeMode
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel(),
     onBack: () -> Unit,
-    onNavigateToEqualizer: () -> Unit
+    onNavigateToEqualizer: () -> Unit,
+    onNavigateToVisualSettings: () -> Unit,
+    onCheckForUpdates: (() -> Unit)? = null
 ) {
+    val viewModel: SettingsViewModel = hiltViewModel()
     val context = LocalContext.current
 
     val themeMode by viewModel.themeMode.collectAsState()
@@ -56,6 +58,7 @@ fun SettingsScreen(
     val isCoverDynamicColorEnabled by viewModel.isCoverDynamicColorEnabled.collectAsState()
     val dynamicColor by viewModel.dynamicColor.collectAsState()
 
+    var showVisualSettingsDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -102,6 +105,8 @@ fun SettingsScreen(
         fontWeight = FontWeight.SemiBold
     )
 
+    var showChangelogDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -135,13 +140,13 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // 0. TEMA SEÇİMİ / THEME SELECTION
+            // 0. GÖRSEL AYARLAR / VISUAL SETTINGS
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = cardBackgroundColor,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showThemeDialog = true }
+                    .clickable { onNavigateToVisualSettings() }
             ) {
                 Row(
                     modifier = Modifier
@@ -155,7 +160,7 @@ fun SettingsScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.DarkMode,
+                            imageVector = Icons.Rounded.Palette,
                             contentDescription = null,
                             tint = cardIconTint,
                             modifier = Modifier.size(24.dp)
@@ -163,7 +168,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = stringResource(R.string.theme_setting),
+                                text = stringResource(R.string.visual_settings_title),
                                 style = settingTitleStyle
                             )
                             val themeLabel = when (themeMode) {
@@ -172,7 +177,7 @@ fun SettingsScreen(
                                 ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
                             }
                             Text(
-                                text = themeLabel,
+                                text = stringResource(R.string.visual_settings_desc, themeLabel),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -180,7 +185,7 @@ fun SettingsScreen(
                     }
                     Icon(
                         imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = stringResource(R.string.select_theme),
+                        contentDescription = stringResource(R.string.visual_settings_title),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -234,101 +239,6 @@ fun SettingsScreen(
                         contentDescription = stringResource(R.string.select_language),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-            }
-
-            // 2. DİNAMİK RENKLER (DYNAMIC COLORS)
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = cardBackgroundColor,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                viewModel.setCoverDynamicColorEnabled(!isCoverDynamicColorEnabled)
-                            },
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Palette,
-                                contentDescription = null,
-                                tint = cardIconTint,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.dynamic_colors_cover),
-                                    style = settingTitleStyle
-                                )
-                                Text(
-                                    text = if (isCoverDynamicColorEnabled) stringResource(R.string.setting_enabled) else stringResource(R.string.setting_disabled),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Switch(
-                            checked = isCoverDynamicColorEnabled,
-                            onCheckedChange = { isChecked ->
-                                viewModel.setCoverDynamicColorEnabled(isChecked)
-                            },
-                            colors = switchColors
-                        )
-                    }
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setDynamicColor(!dynamicColor)
-                                },
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.ColorLens,
-                                    contentDescription = null,
-                                    tint = cardIconTint,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column {
-                                    Text(
-                                        text = stringResource(R.string.dynamic_colors_material),
-                                        style = settingTitleStyle
-                                    )
-                                    Text(
-                                        text = if (dynamicColor) stringResource(R.string.setting_enabled) else stringResource(R.string.setting_disabled),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            Switch(
-                                checked = dynamicColor,
-                                onCheckedChange = { isChecked ->
-                                    viewModel.setDynamicColor(isChecked)
-                                },
-                                colors = switchColors
-                            )
-                        }
-                    }
                 }
             }
 
@@ -457,12 +367,36 @@ fun SettingsScreen(
                     Color.Black
                 }
 
-                Text(
-                    text = stringResource(R.string.app_version, "v1.0.0"),
-                    color = infoColor,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
+                Surface(
+                    onClick = { onCheckForUpdates?.invoke() },
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = stringResource(R.string.check_for_updates),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Surface(
+                    onClick = { showChangelogDialog = true },
+                    color = Color.Transparent,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = stringResource(R.string.app_version, "v1.0.1"),
+                        color = infoColor,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+                
                 Spacer(modifier = Modifier.height(6.dp))
                 Image(
                     painter = painterResource(R.drawable.ic_dev_signature),
@@ -475,6 +409,191 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+
+    if (showChangelogDialog) {
+        AlertDialog(
+            onDismissRequest = { showChangelogDialog = false },
+            title = { Text(text = "NK Müzik v1.0.1", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(text = "Yenilikler:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "- Cihaz içi şarkılarda A'dan Z'ye hızlı gezinme (Fast Scrollbar) eklendi.\n- Oynatma ekranında (Uyku Zamanlayıcı) erişimi kolaylaştırıldı.\n- Çevrimiçi aramada internet kesintilerine özel uyarılar eklendi.\n- Uygulama açılış ekranı (Splash Screen) geliştirildi. \n- Görsel Ayarlar penceresi bağımsız bir görünüme kavuşturuldu.\n- Uygulanma dil desteğinde iyileştirmeler yapıldı.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showChangelogDialog = false }) {
+                    Text(stringResource(R.string.close))
+                }
+            }
+        )
+    }
+
+    if (showVisualSettingsDialog) {
+        AlertDialog(
+            onDismissRequest = { showVisualSettingsDialog = false },
+            title = {
+                Text(
+                    text = "Görsel Ayarlar",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // 1. Tema Seçimi
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showVisualSettingsDialog = false
+                                showThemeDialog = true
+                            },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.DarkMode,
+                                contentDescription = null,
+                                tint = cardIconTint,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.theme_setting),
+                                    style = settingTitleStyle
+                                )
+                                val themeLabel = when (themeMode) {
+                                    ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                                    ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                                    ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
+                                }
+                                Text(
+                                    text = themeLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = stringResource(R.string.select_theme),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    HorizontalDivider()
+
+                    // 2. Kapak Görseline Göre Dinamik Renkler
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewModel.setCoverDynamicColorEnabled(!isCoverDynamicColorEnabled)
+                            },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Palette,
+                                contentDescription = null,
+                                tint = cardIconTint,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.dynamic_colors_cover),
+                                    style = settingTitleStyle
+                                )
+                                Text(
+                                    text = if (isCoverDynamicColorEnabled) stringResource(R.string.setting_enabled) else stringResource(R.string.setting_disabled),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = isCoverDynamicColorEnabled,
+                            onCheckedChange = { isChecked ->
+                                viewModel.setCoverDynamicColorEnabled(isChecked)
+                            },
+                            colors = switchColors
+                        )
+                    }
+
+                    // 3. Material You Dinamik Renkler (Android 12+)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        HorizontalDivider()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setDynamicColor(!dynamicColor)
+                                },
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.ColorLens,
+                                    contentDescription = null,
+                                    tint = cardIconTint,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.dynamic_colors_material),
+                                        style = settingTitleStyle
+                                    )
+                                    Text(
+                                        text = if (dynamicColor) stringResource(R.string.setting_enabled) else stringResource(R.string.setting_disabled),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Switch(
+                                checked = dynamicColor,
+                                onCheckedChange = { isChecked ->
+                                    viewModel.setDynamicColor(isChecked)
+                                },
+                                colors = switchColors
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showVisualSettingsDialog = false }) {
+                    Text(stringResource(R.string.close))
+                }
+            }
+        )
     }
 
     if (showThemeDialog) {
