@@ -42,13 +42,16 @@ import com.nkapps.nkmuzik.ui.theme.DeepNightBlue
 import com.nkapps.nkmuzik.ui.theme.MysticGoldMat
 import com.nkapps.nkmuzik.ui.theme.ThemeMode
 
+import androidx.compose.material.icons.rounded.Info
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
     onNavigateToEqualizer: () -> Unit,
     onNavigateToVisualSettings: () -> Unit,
-    onCheckForUpdates: (() -> Unit)? = null
+    onNavigateToAdvancedSettings: () -> Unit,
+    onNavigateToAbout: () -> Unit
 ) {
     val viewModel: SettingsViewModel = hiltViewModel()
     val context = LocalContext.current
@@ -62,26 +65,6 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
-
-    // Persistent Notification Permission State
-    var isNotificationPermissionGranted by remember {
-        mutableStateOf(
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            } else {
-                true
-            }
-        )
-    }
-
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        isNotificationPermissionGranted = isGranted
-    }
 
     val cardBackgroundColor = MaterialTheme.colorScheme.surfaceContainer
 
@@ -104,8 +87,6 @@ fun SettingsScreen(
         fontSize = 15.sp,
         fontWeight = FontWeight.SemiBold
     )
-
-    var showChangelogDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -140,7 +121,53 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // 0. GÖRSEL AYARLAR / VISUAL SETTINGS
+            // 1. GELİŞMİŞ AYARLAR (ADVANCED SETTINGS)
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = cardBackgroundColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onNavigateToAdvancedSettings)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Tune,
+                            contentDescription = null,
+                            tint = cardIconTint,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = stringResource(R.string.advanced_settings_title),
+                                style = settingTitleStyle
+                            )
+                            Text(
+                                text = stringResource(R.string.advanced_settings_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = stringResource(R.string.advanced_settings_title),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // 2. GÖRSEL AYARLAR / VISUAL SETTINGS
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = cardBackgroundColor,
@@ -191,7 +218,7 @@ fun SettingsScreen(
                 }
             }
 
-            // 1. DİL / LANGUAGE
+            // 3. DİL / LANGUAGE
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = cardBackgroundColor,
@@ -242,63 +269,7 @@ fun SettingsScreen(
                 }
             }
 
-            // 3. KALICI BİLDİRİMLERE İZİN VER (PERSISTENT NOTIFICATIONS)
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = cardBackgroundColor,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Notifications,
-                            contentDescription = null,
-                            tint = cardIconTint,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.persistent_notifications),
-                                style = settingTitleStyle
-                            )
-                            Text(
-                                text = if (isNotificationPermissionGranted) stringResource(R.string.setting_enabled) else stringResource(R.string.setting_disabled),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    Switch(
-                        checked = isNotificationPermissionGranted,
-                        onCheckedChange = { checked ->
-                            if (checked) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
-                                        isNotificationPermissionGranted = true
-                                    }
-                                } else {
-                                    isNotificationPermissionGranted = true
-                                }
-                            } else {
-                                isNotificationPermissionGranted = false
-                            }
-                        },
-                        colors = switchColors
-                    )
-                }
-            }
+            // 4. EKOLAYZER (EQUALIZER)
 
             // 4. EKOLAYZER (EQUALIZER)
             Surface(
@@ -353,7 +324,53 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            // 5. HAKKINDA / ABOUT
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = cardBackgroundColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onNavigateToAbout)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Info,
+                            contentDescription = null,
+                            tint = cardIconTint,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = stringResource(R.string.about_title),
+                                style = settingTitleStyle
+                            )
+                            Text(
+                                text = stringResource(R.string.about_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = stringResource(R.string.about_title),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Column(
                 modifier = Modifier
@@ -367,36 +384,14 @@ fun SettingsScreen(
                     Color.Black
                 }
 
-                Surface(
-                    onClick = { onCheckForUpdates?.invoke() },
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = stringResource(R.string.check_for_updates),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
+                Text(
+                    text = stringResource(R.string.app_version, "v1.2.0"),
+                    color = infoColor,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Surface(
-                    onClick = { showChangelogDialog = true },
-                    color = Color.Transparent,
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = stringResource(R.string.app_version, "v1.0.1"),
-                        color = infoColor,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-                
                 Spacer(modifier = Modifier.height(6.dp))
                 Image(
                     painter = painterResource(R.drawable.ic_dev_signature),
@@ -404,34 +399,11 @@ fun SettingsScreen(
                     contentScale = ContentScale.Fit,
                     colorFilter = ColorFilter.tint(infoColor),
                     modifier = Modifier
-                        .height(40.dp)
+                        .height(36.dp)
                         .clickable { showAboutDialog = true }
                 )
             }
         }
-    }
-
-    if (showChangelogDialog) {
-        AlertDialog(
-            onDismissRequest = { showChangelogDialog = false },
-            title = { Text(text = "NK Müzik v1.0.1", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-            text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text(text = "Yenilikler:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "- Cihaz içi şarkılarda A'dan Z'ye hızlı gezinme (Fast Scrollbar) eklendi.\n- Oynatma ekranında (Uyku Zamanlayıcı) erişimi kolaylaştırıldı.\n- Çevrimiçi aramada internet kesintilerine özel uyarılar eklendi.\n- Uygulama açılış ekranı (Splash Screen) geliştirildi. \n- Görsel Ayarlar penceresi bağımsız bir görünüme kavuşturuldu.\n- Uygulanma dil desteğinde iyileştirmeler yapıldı.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showChangelogDialog = false }) {
-                    Text(stringResource(R.string.close))
-                }
-            }
-        )
     }
 
     if (showVisualSettingsDialog) {

@@ -13,46 +13,48 @@ import java.util.regex.Pattern
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import com.nkapps.nkmuzik.data.remote.RemoteConfigManager
-
 interface LyricsRepository {
     suspend fun getLyrics(title: String, artist: String): LyricsData
 }
 
 @Singleton
-class LyricsRepositoryImpl @Inject constructor(
-    private val remoteConfigManager: RemoteConfigManager
-) : LyricsRepository {
+class LyricsRepositoryImpl @Inject constructor() : LyricsRepository {
 
     private val httpClient = OkHttpClient.Builder()
         .followRedirects(true)
         .build()
 
-    private fun getLyricsBaseUrl(): String {
-        return remoteConfigManager.lyricsBaseUrl.value.trim().trimEnd('/')
-    }
-
-
+    private fun getLyricsBaseUrl(): String = "https://lrclib.net/api"
 
     override suspend fun getLyrics(title: String, artist: String): LyricsData = withContext(Dispatchers.IO) {
-        val cleanTitle = cleanSearchTerm(title)
-        val cleanArtist = cleanSearchTerm(artist)
+        val parsed = com.nkapps.nkmuzik.utils.MediaTitleParser.parse(title, artist)
+        val cleanTitle = parsed.title.ifBlank { cleanSearchTerm(title) }
+        val cleanArtist = if (parsed.artist != "Sanatçı" && !com.nkapps.nkmuzik.utils.MediaTitleParser.isUploaderChannelName(parsed.artist)) parsed.artist else ""
 
         if (cleanTitle.isBlank()) {
             return@withContext LyricsData(plainText = "Şarkı sözü bilgisi bulunamadı.")
         }
 
-        // 1. Try LrcLib Direct Get
-        val directResult = fetchLrcLibGet(cleanTitle, cleanArtist)
-        if (directResult != null) return@withContext directResult
+        // 1. Try LrcLib Direct Get with cleanTitle and cleanArtist
+        if (cleanArtist.isNotBlank()) {
+            val directResult = fetchLrcLibGet(cleanTitle, cleanArtist)
+            if (directResult != null) return@withContext directResult
+        }
 
-        // 2. Try LrcLib Search
-        val searchResult = fetchLrcLibSearch("$cleanArtist $cleanTitle".trim())
-        if (searchResult != null) return@withContext searchResult
+        // 2. Try LrcLib Search with "$cleanArtist $cleanTitle"
+        if (cleanArtist.isNotBlank()) {
+            val searchResult = fetchLrcLibSearch("$cleanArtist $cleanTitle".trim())
+            if (searchResult != null) return@withContext searchResult
+        }
 
-        // 3. Try with raw title if cleaned version didn't work
-        if (cleanTitle != title) {
-            val rawSearchResult = fetchLrcLibSearch(title)
+        // 3. Try LrcLib Search with cleanTitle only
+        val titleSearchResult = fetchLrcLibSearch(cleanTitle)
+        if (titleSearchResult != null) return@withContext titleSearchResult
+
+        // 4. Try with raw title if cleaned version didn't work
+        val rawTitle = cleanSearchTerm(title)
+        if (rawTitle.isNotBlank() && rawTitle != cleanTitle) {
+            val rawSearchResult = fetchLrcLibSearch(rawTitle)
             if (rawSearchResult != null) return@withContext rawSearchResult
         }
 
@@ -65,11 +67,11 @@ class LyricsRepositoryImpl @Inject constructor(
         try {
             val encodedTitle = URLEncoder.encode(title, "UTF-8")
             val encodedArtist = URLEncoder.encode(artist, "UTF-8")
-            val url = "$baseUrl/lyrics?track=$encodedTitle&artist=$encodedArtist"
+            val url = "$baseUrl/get?track_name=$encodedTitle&artist_name=$encodedArtist"
 
             val request = Request.Builder()
                 .url(url)
-                .header("User-Agent", "NKMuzik-AndroidApp/1.0")
+                .header("User-Agent", "NKMuzik-AndroidApp/1.0 (https://github.com/ndrkykc/NKMuzik)")
                 .build()
 
             val response = httpClient.newCall(request).execute()
@@ -92,11 +94,11 @@ class LyricsRepositoryImpl @Inject constructor(
         if (baseUrl.isBlank()) return null
         try {
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
-            val url = "$baseUrl/lyrics/search?q=$encodedQuery"
+            val url = "$baseUrl/search?q=$encodedQuery"
 
             val request = Request.Builder()
                 .url(url)
-                .header("User-Agent", "NKMuzik-AndroidApp/1.0")
+                .header("User-Agent", "NKMuzik-AndroidApp/1.0 (https://github.com/ndrkykc/NKMuzik)")
                 .build()
 
             val response = httpClient.newCall(request).execute()

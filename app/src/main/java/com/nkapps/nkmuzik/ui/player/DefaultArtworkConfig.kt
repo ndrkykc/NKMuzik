@@ -29,13 +29,38 @@ import androidx.compose.ui.graphics.vector.ImageVector
  */
 object DefaultArtworkConfig {
     /**
-     * Optional custom drawable resource ID for default artwork image.
-     * Set this to `R.drawable.your_custom_artwork` (e.g. R.drawable.ic_default_cover)
-     * to use a custom image asset.
-     * Set to `null` to use procedural gradient artwork with icon and title.
+     * Primary default artwork resource ID.
      */
     @DrawableRes
-    val DEFAULT_DRAWABLE_RES_ID: Int? = null
+    val DEFAULT_DRAWABLE_RES_ID: Int = com.nkapps.nkmuzik.R.drawable.app_logo_splash
+
+    /**
+     * Pool of fallback drawable resource IDs for tracks without artwork.
+     * Place your custom images into res/drawable/ (e.g. cover_1.png ... cover_6.png)
+     * and add R.drawable.cover_1 ... R.drawable.cover_6 to this list!
+     */
+    @DrawableRes
+    val DEFAULT_DRAWABLE_RES_IDS: List<Int> = listOf(
+        com.nkapps.nkmuzik.R.drawable.kapak_1,
+        com.nkapps.nkmuzik.R.drawable.kapak_2,
+        com.nkapps.nkmuzik.R.drawable.kapak_3,
+        com.nkapps.nkmuzik.R.drawable.kapak_4,
+        com.nkapps.nkmuzik.R.drawable.kapak_5,
+        com.nkapps.nkmuzik.R.drawable.kapak_6
+    )
+
+    /**
+     * Returns a deterministic fallback artwork drawable ID based on track title/ID hash,
+     * ensuring each song without artwork gets a consistent, distinct cover image from the pool!
+     */
+    @DrawableRes
+    fun getFallbackDrawableRes(title: String? = null, trackId: String? = null): Int {
+        val pool = DEFAULT_DRAWABLE_RES_IDS.filter { it != 0 }
+        if (pool.isEmpty()) return DEFAULT_DRAWABLE_RES_ID
+        val hash = (title ?: trackId ?: "").hashCode()
+        val index = (hash and Int.MAX_VALUE) % pool.size
+        return pool[index]
+    }
 
     /**
      * Start color for procedural gradient background.

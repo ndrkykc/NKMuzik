@@ -22,7 +22,7 @@
     <string name="info">Bilgi</string>
     <string name="share">Paylaş</string>
     <string name="rename">Yeniden Adlandır</string>
-    <string name="discover">Keşfet</string>
+    <string name="discover">YT Online</string>
     <string name="downloaded">İndirildi</string>
     <string name="version">Versiyon %1$s</string>
     <string name="clear">Temizle</string>
@@ -182,4 +182,23 @@
     <string name="visual_settings_title">Görsel Ayarlar</string>
     <string name="visual_settings_desc">Tema, Kapak Görseli ve Dinamik Renkler (%1$s)</string>
     <string name="check_for_updates">Güncellemeleri Kontrol Et</string>
+
+    <!-- Search History Settings -->
+    <string name="remember_search_history">Arama geçmişini kaydet</string>
+    <string name="clear_search_history_setting">Arama geçmişini temizle</string>
+    <string name="search_history_cleared">Arama geçmişi temizlendi</string>
+
+    <!-- Advanced Settings -->
+    <string name="advanced_settings_title">Gelişmiş Ayarlar</string>
+    <string name="advanced_settings_desc">Kalıcı Bildirimler ve Arama Geçmişi Yönetimi</string>
+
+    <!-- Voice Search -->
+    <string name="voice_search">Sesli Arama</string>
+    <string name="speech_not_supported">Ses tanıma bu cihazda desteklenmiyor</string>
+
+    <!-- About Screen -->
+    <string name="about_title">Hakkında</string>
+    <string name="about_desc">Sürüm Detayları, Yenilikler ve Güncellemeler</string>
+    <string name="whats_new_title">Neler Yeni?</string>
+    <string name="app_build_info">Sürüm %1$s (Build %2$d)</string>
 </resources>

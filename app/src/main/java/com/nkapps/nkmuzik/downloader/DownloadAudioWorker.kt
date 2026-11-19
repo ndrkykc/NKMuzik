@@ -17,7 +17,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.nkapps.nkmuzik.data.remote.RemoteConfigManager
 import com.nkapps.nkmuzik.data.repository.OnlineSearchRepositoryImpl
 import com.nkapps.nkmuzik.data.preferences.ThemePreferences
 import kotlinx.coroutines.Dispatchers
@@ -148,9 +147,8 @@ class DownloadAudioWorker(
             response?.close()
             response = null
             try {
-                val remoteConfigManager = RemoteConfigManager(applicationContext)
                 val themePrefs = ThemePreferences(applicationContext)
-                val repository = OnlineSearchRepositoryImpl(remoteConfigManager, themePrefs)
+                val repository = OnlineSearchRepositoryImpl(themePrefs)
                 val freshInfo = repository.getAudioStreamUrl(videoId).getOrNull()
                 if (freshInfo != null && freshInfo.audioUrl.isNotBlank()) {
                     currentUrl = freshInfo.audioUrl

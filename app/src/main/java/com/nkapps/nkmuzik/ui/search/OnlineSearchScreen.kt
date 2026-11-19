@@ -15,6 +15,16 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -67,6 +77,8 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
     val showSuggestions by viewModel.showSuggestions.collectAsState()
     val enableOnlineFeatures by viewModel.enableOnlineFeatures.collectAsState()
     val isOnlineSearchSource by viewModel.isOnlineSearchSource.collectAsState()
+    val searchHistory by viewModel.searchHistory.collectAsState()
+    val rememberSearchHistory by viewModel.rememberSearchHistory.collectAsState()
 
     var trackToAddToPlaylist by remember { mutableStateOf<OnlineSearchResultDto?>(null) }
 
@@ -92,6 +104,42 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
         }
     }
 
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spokenText.isNullOrBlank()) {
+                viewModel.onOnlineQueryChanged(spokenText)
+                viewModel.performSearch(spokenText)
+            }
+        }
+    }
+
+    val voiceSearchPrompt = stringResource(R.string.voice_search)
+    val speechNotSupportedMsg = stringResource(R.string.speech_not_supported)
+
+    val launchVoiceSearch: () -> Unit = {
+        try {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, voiceSearchPrompt)
+            }
+            speechLauncher.launch(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, speechNotSupportedMsg, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val searchInteractionSource = remember { MutableInteractionSource() }
+    val isSearchFocused by searchInteractionSource.collectIsFocusedAsState()
+
+    LaunchedEffect(isSearchFocused) {
+        if (isSearchFocused) {
+            viewModel.openSuggestions()
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -101,13 +149,6 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        viewModel.dismissSuggestions()
-                        focusManager.clearFocus()
-                        keyboardController?.hide()
-                    })
-                }
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth()
@@ -121,6 +162,7 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.onQueryChanged(it) },
+                        interactionSource = searchInteractionSource,
                         modifier = Modifier
                             .fillMaxWidth()
                             .onSizeChanged {
@@ -136,12 +178,21 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
                         },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    viewModel.onQueryChanged("")
-                                    viewModel.dismissSuggestions()
-                                }) {
-                                    Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = {
+                                        viewModel.onQueryChanged("")
+                                        viewModel.openSuggestions()
+                                    }) {
+                                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear))
+                                    }
+                                }
+                                IconButton(onClick = launchVoiceSearch) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Mic,
+                                        contentDescription = stringResource(R.string.voice_search),
+                                        tint = MaterialTheme.colorScheme.outline
+                                    )
                                 }
                             }
                         },
@@ -164,7 +215,10 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
                     )
 
                     val searchCompletions by viewModel.searchCompletions.collectAsState()
-                    if (showSuggestions && searchCompletions.isNotEmpty() && searchQuery.isNotBlank()) {
+                    val displayHistory = rememberSearchHistory && searchHistory.isNotEmpty() && searchQuery.isBlank()
+                    val displayCompletions = searchQuery.isNotBlank() && searchCompletions.isNotEmpty()
+
+                    if (showSuggestions && (displayHistory || displayCompletions)) {
                         val searchBarWidthDp = with(LocalDensity.current) { searchBarWidth.toDp() }
                         Popup(
                             alignment = Alignment.TopStart,
@@ -194,30 +248,103 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
                                 ) {
-                                    searchCompletions.forEach { suggestion ->
+                                    if (displayHistory) {
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .clickable {
-                                                    viewModel.selectCompletion(suggestion)
-                                                    focusManager.clearFocus()
-                                                    keyboardController?.hide()
-                                                }
-                                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(
-                                                Icons.Default.Search,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp),
-                                                tint = MaterialTheme.colorScheme.outline
-                                            )
-                                            Spacer(modifier = Modifier.width(12.dp))
                                             Text(
-                                                text = suggestion,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurface
+                                                text = stringResource(R.string.search_history),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Bold
                                             )
+                                            Text(
+                                                text = stringResource(R.string.clear_history),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.clickable {
+                                                    viewModel.clearSearchHistory()
+                                                }
+                                            )
+                                        }
+                                        searchHistory.take(10).forEach { historyQuery ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        viewModel.onQueryChanged(historyQuery)
+                                                        viewModel.performSearch(historyQuery)
+                                                        focusManager.clearFocus()
+                                                        keyboardController?.hide()
+                                                    }
+                                                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.History,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(18.dp),
+                                                        tint = MaterialTheme.colorScheme.outline
+                                                    )
+                                                    Spacer(modifier = Modifier.width(12.dp))
+                                                    Text(
+                                                        text = historyQuery,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        viewModel.removeSearchHistoryQuery(historyQuery)
+                                                    },
+                                                    modifier = Modifier.size(24.dp)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Clear,
+                                                        contentDescription = "Sil",
+                                                        modifier = Modifier.size(16.dp),
+                                                        tint = MaterialTheme.colorScheme.outline
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    } else if (displayCompletions) {
+                                        searchCompletions.forEach { suggestion ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        viewModel.selectCompletion(suggestion)
+                                                        focusManager.clearFocus()
+                                                        keyboardController?.hide()
+                                                    }
+                                                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Search,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.outline
+                                                )
+                                                Spacer(modifier = Modifier.width(12.dp))
+                                                Text(
+                                                    text = suggestion,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -239,20 +366,110 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
 
                     when (val state = uiState) {
                         is SearchUiState.Idle -> {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(64.dp),
-                                        tint = MaterialTheme.colorScheme.outline
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        stringResource(R.string.online_search_idle_prompt),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
+                            if (rememberSearchHistory && searchHistory.isNotEmpty()) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 4.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.search_history),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        TextButton(onClick = { viewModel.clearSearchHistory() }) {
+                                            Text(
+                                                text = stringResource(R.string.clear_history),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        items(searchHistory) { historyQuery ->
+                                            Surface(
+                                                shape = MaterialTheme.shapes.medium,
+                                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        viewModel.onQueryChanged(historyQuery)
+                                                        viewModel.performSearch(historyQuery)
+                                                        focusManager.clearFocus()
+                                                        keyboardController?.hide()
+                                                    }
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.weight(1f)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Rounded.History,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(20.dp),
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                        Spacer(modifier = Modifier.width(12.dp))
+                                                        Text(
+                                                            text = historyQuery,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = MaterialTheme.colorScheme.onSurface,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
+                                                    }
+                                                    IconButton(
+                                                        onClick = {
+                                                            viewModel.removeSearchHistoryQuery(historyQuery)
+                                                        },
+                                                        modifier = Modifier.size(28.dp)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Default.Clear,
+                                                            contentDescription = "Sil",
+                                                            modifier = Modifier.size(18.dp),
+                                                            tint = MaterialTheme.colorScheme.outline
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            Icons.Default.Search,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(64.dp),
+                                            tint = MaterialTheme.colorScheme.outline
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text(
+                                            stringResource(R.string.online_search_idle_prompt),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.outline
+                                        )
+                                    }
                                 }
                             }
                         }

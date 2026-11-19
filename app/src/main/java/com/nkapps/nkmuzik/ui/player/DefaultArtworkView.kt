@@ -35,59 +35,14 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun DefaultArtworkView(
     modifier: Modifier = Modifier,
-    title: String? = null
+    title: String? = null,
+    trackId: String? = null
 ) {
-    val customResId = DefaultArtworkConfig.DEFAULT_DRAWABLE_RES_ID
-    if (customResId != null && customResId != 0) {
-        Image(
-            painter = painterResource(id = customResId),
-            contentDescription = title ?: DefaultArtworkConfig.FALLBACK_TITLE,
-            modifier = modifier,
-            contentScale = ContentScale.Crop
-        )
-    } else {
-        Box(
-            modifier = modifier.background(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        DefaultArtworkConfig.GRADIENT_START_COLOR,
-                        DefaultArtworkConfig.GRADIENT_END_COLOR
-                    )
-                )
-            ),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Icon(
-                    imageVector = DefaultArtworkConfig.DEFAULT_ICON,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = DefaultArtworkConfig.ICON_TINT
-                )
-
-                val displayTitle = if (!title.isNullOrBlank()) {
-                    title
-                } else {
-                    DefaultArtworkConfig.FALLBACK_TITLE
-                }
-
-                if (displayTitle.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = displayTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White.copy(alpha = 0.9f),
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-    }
+    val fallbackResId = DefaultArtworkConfig.getFallbackDrawableRes(title, trackId)
+    Image(
+        painter = painterResource(id = fallbackResId),
+        contentDescription = title ?: DefaultArtworkConfig.FALLBACK_TITLE,
+        modifier = modifier,
+        contentScale = ContentScale.Crop
+    )
 }

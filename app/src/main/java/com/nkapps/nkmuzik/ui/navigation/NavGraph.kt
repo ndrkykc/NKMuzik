@@ -43,9 +43,11 @@ fun AppNavHost(
                 onNavigateToVisualSettings = {
                     navController.navigate(Screen.VisualSettings.route)
                 },
-                onCheckForUpdates = {
-                    val activity = navController.context as? com.nkapps.nkmuzik.MainActivity
-                    activity?.checkUpdatesManually()
+                onNavigateToAdvancedSettings = {
+                    navController.navigate(Screen.AdvancedSettings.route)
+                },
+                onNavigateToAbout = {
+                    navController.navigate(Screen.About.route)
                 }
             )
         }
@@ -57,6 +59,20 @@ fun AppNavHost(
         composable(Screen.VisualSettings.route) {
             com.nkapps.nkmuzik.ui.settings.VisualSettingsScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.AdvancedSettings.route) {
+            com.nkapps.nkmuzik.ui.settings.AdvancedSettingsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.About.route) {
+            com.nkapps.nkmuzik.ui.settings.AboutScreen(
+                onBack = { navController.popBackStack() },
+                onCheckForUpdates = {
+                    val activity = navController.context as? com.nkapps.nkmuzik.MainActivity
+                    activity?.checkUpdatesManually()
+                }
             )
         }
         composable(Screen.Library.route) {

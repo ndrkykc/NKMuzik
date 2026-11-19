@@ -3,7 +3,6 @@ package com.nkapps.nkmuzik.ui.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nkapps.nkmuzik.data.model.OnlineSearchResultDto
-import com.nkapps.nkmuzik.data.remote.RemoteConfigManager
 import com.nkapps.nkmuzik.data.preferences.ThemePreferences
 import com.nkapps.nkmuzik.data.repository.OnlineSearchRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,13 +15,12 @@ import javax.inject.Inject
 @HiltViewModel
 class OnlineSearchViewModel @Inject constructor(
     private val searchRepository: OnlineSearchRepository,
-    private val remoteConfigManager: RemoteConfigManager,
     private val themePreferences: ThemePreferences
 ) : ViewModel() {
 
-    val enableOnlineFeatures: StateFlow<Boolean> = remoteConfigManager.enableOnlineFeatures
+    val enableOnlineFeatures: StateFlow<Boolean> = MutableStateFlow(true).asStateFlow()
 
-    val onlineTabLabel: StateFlow<String> = remoteConfigManager.onlineTabLabel
+    val onlineTabLabel: StateFlow<String> = MutableStateFlow("YT Online").asStateFlow()
 
     private val _onlineQuery = MutableStateFlow("")
     val onlineQuery: StateFlow<String> = _onlineQuery.asStateFlow()

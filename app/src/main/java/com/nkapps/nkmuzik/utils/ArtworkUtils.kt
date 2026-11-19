@@ -159,7 +159,9 @@ object ArtworkUtils {
                     if (embedded != null) {
                         return embedded
                     }
-                    return parsed
+                    if (!uriOrUrl.contains("albumart")) {
+                        return parsed
+                    }
                 }
             }
 
@@ -185,6 +187,7 @@ object ArtworkUtils {
     /**
      * Resolves the Coil ImageRequest for a track, applying SquareCropTransformation
      * so that all Coil image requests automatically strip side and top/bottom bars.
+     * If no artwork is found or image fails to load, falls back to standard default cover image.
      */
     fun getArtworkModel(
         context: Context,
@@ -192,11 +195,15 @@ object ArtworkUtils {
         title: String? = null,
         videoId: String? = null,
         durationString: String? = null,
-        uploaderName: String? = null
-    ): ImageRequest? {
-        val rawModel = getRawArtworkModel(context, uriOrUrl, title, videoId, durationString, uploaderName) ?: return null
+        uploaderName: String? = null,
+        fallbackDrawableRes: Int = com.nkapps.nkmuzik.ui.player.DefaultArtworkConfig.getFallbackDrawableRes(title, videoId)
+    ): ImageRequest {
+        val rawModel = getRawArtworkModel(context, uriOrUrl, title, videoId, durationString, uploaderName) ?: fallbackDrawableRes
         return ImageRequest.Builder(context)
             .data(rawModel)
+            .placeholder(fallbackDrawableRes)
+            .error(fallbackDrawableRes)
+            .fallback(fallbackDrawableRes)
             .transformations(SquareCropTransformation())
             .crossfade(true)
             .build()

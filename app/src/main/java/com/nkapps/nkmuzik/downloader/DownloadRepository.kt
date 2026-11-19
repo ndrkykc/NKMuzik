@@ -8,7 +8,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.nkapps.nkmuzik.data.model.OnlineSearchResultDto
-import com.nkapps.nkmuzik.data.remote.RemoteConfigManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,8 +38,7 @@ data class DownloadProgressInfo(
 
 @Singleton
 class DownloadRepository @Inject constructor(
-    @param:ApplicationContext private val context: Context,
-    private val remoteConfigManager: RemoteConfigManager
+    @param:ApplicationContext private val context: Context
 ) {
     private val workManager = WorkManager.getInstance(context)
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -49,10 +47,6 @@ class DownloadRepository @Inject constructor(
     val downloadStates: StateFlow<Map<String, DownloadProgressInfo>> = _downloadStates.asStateFlow()
 
     fun startDownload(item: OnlineSearchResultDto, streamUrl: String): UUID? {
-        if (!remoteConfigManager.enableOnlineFeatures.value) {
-            return null
-        }
-
         val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
         val appDirs = listOfNotNull(musicDir, File(musicDir, "NK Müzik"), File(musicDir, "NK Muzik"))
 

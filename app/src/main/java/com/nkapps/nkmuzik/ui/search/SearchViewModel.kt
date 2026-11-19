@@ -22,7 +22,6 @@ import com.nkapps.nkmuzik.data.db.entity.PlaylistTrackEntity
 import com.nkapps.nkmuzik.data.model.LocalTrack
 import com.nkapps.nkmuzik.data.model.LyricsData
 import com.nkapps.nkmuzik.data.model.OnlineSearchResultDto
-import com.nkapps.nkmuzik.data.remote.RemoteConfigManager
 import com.nkapps.nkmuzik.utils.MediaTitleParser
 import android.media.MediaScannerConnection
 import android.util.Log
@@ -178,7 +177,6 @@ class SearchViewModel @Inject constructor(
     private val themePreferences: ThemePreferences,
     private val localMediaRepository: LocalMediaRepository,
     private val deletedTracksStore: DeletedTracksStore,
-    private val remoteConfigManager: RemoteConfigManager,
     private val analyticsManager: AnalyticsManager,
     private val searchLocalTracksUseCase: com.nkapps.nkmuzik.domain.usecase.SearchLocalTracksUseCase,
     private val searchOnlineTracksUseCase: com.nkapps.nkmuzik.domain.usecase.SearchOnlineTracksUseCase,
@@ -187,9 +185,9 @@ class SearchViewModel @Inject constructor(
     private val networkConnectivityObserver: com.nkapps.nkmuzik.utils.NetworkConnectivityObserver
 ) : AndroidViewModel(context as Application) {
 
-    val enableOnlineFeatures: StateFlow<Boolean> = remoteConfigManager.enableOnlineFeatures
-    val onlineTabLabel: StateFlow<String> = remoteConfigManager.onlineTabLabel
-    val isOnlineSearchSource: StateFlow<Boolean> = remoteConfigManager.isOnlineSearchSource
+    val enableOnlineFeatures: StateFlow<Boolean> = MutableStateFlow(true).asStateFlow()
+    val onlineTabLabel: StateFlow<String> = MutableStateFlow("YT Online").asStateFlow()
+    val isOnlineSearchSource: StateFlow<Boolean> = MutableStateFlow(true).asStateFlow()
 
     private var cachedDeletedIds = emptySet<String>()
     private var cachedDeletedPaths = emptySet<String>()
@@ -209,6 +207,47 @@ class SearchViewModel @Inject constructor(
 
     val isCoverDynamicColorEnabled: StateFlow<Boolean> = themePreferences.isCoverDynamicColorEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val isGridViewMode: StateFlow<Boolean> = themePreferences.isGridViewMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val rememberSearchHistory: StateFlow<Boolean> = themePreferences.rememberSearchHistory
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val searchHistory: StateFlow<List<String>> = themePreferences.searchHistory
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setGridViewMode(isGrid: Boolean) {
+        viewModelScope.launch {
+            themePreferences.setGridViewMode(isGrid)
+        }
+    }
+
+    fun setRememberSearchHistory(enabled: Boolean) {
+        viewModelScope.launch {
+            themePreferences.setRememberSearchHistory(enabled)
+        }
+    }
+
+    fun addSearchHistoryQuery(query: String) {
+        if (rememberSearchHistory.value && query.isNotBlank()) {
+            viewModelScope.launch {
+                themePreferences.addSearchHistoryQuery(query)
+            }
+        }
+    }
+
+    fun removeSearchHistoryQuery(query: String) {
+        viewModelScope.launch {
+            themePreferences.removeSearchHistoryQuery(query)
+        }
+    }
+
+    fun clearSearchHistory() {
+        viewModelScope.launch {
+            themePreferences.clearSearchHistory()
+        }
+    }
 
     val language: StateFlow<String> = themePreferences.language
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LanguageManager.getInitialLanguage())
@@ -454,8 +493,6 @@ class SearchViewModel @Inject constructor(
     }
 
     init {
-        remoteConfigManager.fetchAndActivate()
-
         val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
         controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
         controllerFuture.addListener({
@@ -1001,6 +1038,10 @@ class SearchViewModel @Inject constructor(
         _searchCompletions.value = emptyList()
     }
 
+    fun openSuggestions() {
+        _showSuggestions.value = true
+    }
+
     fun searchLocalTracks(
         query: String,
         tracks: List<LocalTrack> = _localTracks.value
@@ -1087,6 +1128,9 @@ class SearchViewModel @Inject constructor(
     fun performSearch(query: String) {
         logDebug("OnlineSearch", "SearchViewModel -> executing search query: '$query'")
         dismissSuggestions()
+        if (query.isNotBlank()) {
+            addSearchHistoryQuery(query)
+        }
 
         if (!networkConnectivityObserver.isCurrentlyConnected()) {
             _isSearchingOnline.value = false

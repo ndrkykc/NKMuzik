@@ -43,6 +43,10 @@ class ThemePreferences @Inject constructor(
     private val LAST_PLAYED_CONTENT_URI = stringPreferencesKey("last_played_content_uri")
     private val LAST_PLAYED_POSITION = longPreferencesKey("last_played_position")
     
+    private val HOME_VIEW_MODE_KEY = stringPreferencesKey("home_view_mode")
+    private val REMEMBER_SEARCH_HISTORY_KEY = booleanPreferencesKey("remember_search_history")
+    private val SEARCH_HISTORY_KEY = stringPreferencesKey("search_history_json")
+
     // Mağaza güvenliği için Paskalya Yumurtası (Easter Egg) / Gizli Kilit durumu
     private val IS_ONLINE_UNLOCKED = booleanPreferencesKey("is_online_unlocked")
 
@@ -127,6 +131,61 @@ class ThemePreferences @Inject constructor(
             prefs[LAST_PLAYED_ARTWORK_URI] = artworkUri
             prefs[LAST_PLAYED_CONTENT_URI] = contentUri
             prefs[LAST_PLAYED_POSITION] = position
+        }
+    }
+
+    val isGridViewMode: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[HOME_VIEW_MODE_KEY] == "grid"
+    }
+
+    suspend fun setGridViewMode(isGrid: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[HOME_VIEW_MODE_KEY] = if (isGrid) "grid" else "list"
+        }
+    }
+
+    val rememberSearchHistory: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[REMEMBER_SEARCH_HISTORY_KEY] ?: true
+    }
+
+    suspend fun setRememberSearchHistory(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[REMEMBER_SEARCH_HISTORY_KEY] = enabled
+        }
+    }
+
+    val searchHistory: Flow<List<String>> = context.dataStore.data.map { prefs ->
+        val raw = prefs[SEARCH_HISTORY_KEY] ?: ""
+        if (raw.isBlank()) emptyList()
+        else raw.split("|||").filter { it.isNotBlank() }
+    }
+
+    suspend fun addSearchHistoryQuery(query: String) {
+        if (query.isBlank()) return
+        context.dataStore.edit { prefs ->
+            val raw = prefs[SEARCH_HISTORY_KEY] ?: ""
+            val currentList = if (raw.isBlank()) mutableListOf() else raw.split("|||").filter { it.isNotBlank() }.toMutableList()
+            currentList.remove(query)
+            currentList.add(0, query)
+            val trimmedList = currentList.take(20)
+            prefs[SEARCH_HISTORY_KEY] = trimmedList.joinToString("|||")
+        }
+    }
+
+    suspend fun removeSearchHistoryQuery(query: String) {
+        if (query.isBlank()) return
+        context.dataStore.edit { prefs ->
+            val raw = prefs[SEARCH_HISTORY_KEY] ?: ""
+            if (raw.isNotBlank()) {
+                val currentList = raw.split("|||").filter { it.isNotBlank() && it != query }
+                prefs[SEARCH_HISTORY_KEY] = currentList.joinToString("|||")
+            }
+        }
+    }
+
+    suspend fun clearSearchHistory() {
+        context.dataStore.edit { prefs ->
+            prefs[SEARCH_HISTORY_KEY] = ""
         }
     }
 }

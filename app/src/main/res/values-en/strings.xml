@@ -22,7 +22,7 @@
     <string name="info">Info</string>
     <string name="share">Share</string>
     <string name="rename">Rename</string>
-    <string name="discover">Discover</string>
+    <string name="discover">YT Online</string>
     <string name="downloaded">Downloaded</string>
     <string name="version">Version %1$s</string>
     <string name="clear">Clear</string>
@@ -182,4 +182,23 @@
     <string name="visual_settings_title">Visual Settings</string>
     <string name="visual_settings_desc">Theme, Cover Image and Dynamic Colors (%1$s)</string>
     <string name="check_for_updates">Check for Updates</string>
+
+    <!-- Search History Settings -->
+    <string name="remember_search_history">Save search history</string>
+    <string name="clear_search_history_setting">Clear search history</string>
+    <string name="search_history_cleared">Search history cleared</string>
+
+    <!-- Advanced Settings -->
+    <string name="advanced_settings_title">Advanced Settings</string>
+    <string name="advanced_settings_desc">Persistent Notifications &amp; Search History Management</string>
+
+    <!-- Voice Search -->
+    <string name="voice_search">Voice Search</string>
+    <string name="speech_not_supported">Speech recognition is not supported on this device</string>
+
+    <!-- About Screen -->
+    <string name="about_title">About</string>
+    <string name="about_desc">Version Details, Changelog &amp; Updates</string>
+    <string name="whats_new_title">What\'s New?</string>
+    <string name="app_build_info">Version %1$s (Build %2$d)</string>
 </resources>

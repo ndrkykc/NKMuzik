@@ -3,7 +3,6 @@ package com.nkapps.nkmuzik.data.repository
 import android.util.Log
 import com.nkapps.nkmuzik.data.model.AudioStreamInfo
 import com.nkapps.nkmuzik.data.model.OnlineSearchResultDto
-import com.nkapps.nkmuzik.data.remote.RemoteConfigManager
 import com.nkapps.nkmuzik.data.preferences.ThemePreferences
 import com.nkapps.nkmuzik.utils.MediaTitleParser
 import kotlinx.coroutines.Dispatchers
@@ -29,8 +28,7 @@ interface OnlineSearchRepository {
 
 @Singleton
 class OnlineSearchRepositoryImpl @Inject constructor(
-    private val remoteConfigManager: RemoteConfigManager?,
-    private val preferences: ThemePreferences? = null
+    private val preferences: ThemePreferences?
 ) : OnlineSearchRepository {
 
     private fun logDebug(tag: String, message: String) {
@@ -43,9 +41,7 @@ class OnlineSearchRepositoryImpl @Inject constructor(
         } catch (_: Throwable) {}
     }
 
-    private suspend fun isOnlineEnabled(): Boolean {
-        return remoteConfigManager?.enableOnlineFeatures?.value ?: true
-    }
+    private suspend fun isOnlineEnabled(): Boolean = true
 
     override fun searchTracks(query: String): Flow<List<OnlineSearchResultDto>> = searchOnline(query)
 

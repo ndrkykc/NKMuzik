@@ -1,7 +1,12 @@
 package com.nkapps.nkmuzik.ui.home
 
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -42,7 +47,10 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -130,9 +138,40 @@ fun HomeScreen(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     var selectedSection by remember { mutableStateOf("all") }
-    var allViewMode by remember { mutableIntStateOf(0) } // 0: Liste, 1: 2'li Kare
-    var favoritesViewMode by remember { mutableIntStateOf(0) } // 0: Liste, 1: 2'li Kare
+    val isGridViewMode by viewModel.isGridViewMode.collectAsState()
+    val currentViewMode = if (isGridViewMode) 1 else 0
     var localSearchQuery by remember { mutableStateOf("") }
+
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spokenText.isNullOrBlank()) {
+                if (selectedSection == "online") {
+                    viewModel.onOnlineQueryChanged(spokenText)
+                    viewModel.performSearch(spokenText)
+                } else {
+                    localSearchQuery = spokenText
+                }
+            }
+        }
+    }
+
+    val voiceSearchPrompt = stringResource(R.string.voice_search)
+    val speechNotSupportedMsg = stringResource(R.string.speech_not_supported)
+
+    val launchVoiceSearch: () -> Unit = {
+        try {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_PROMPT, voiceSearchPrompt)
+            }
+            speechLauncher.launch(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, speechNotSupportedMsg, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     var isRefreshing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -154,6 +193,8 @@ fun HomeScreen(
     val isSearchingOnline by viewModel.isSearchingOnline.collectAsState()
     val searchCompletions by viewModel.searchCompletions.collectAsState()
     val showSuggestions by viewModel.showSuggestions.collectAsState()
+    val searchHistory by viewModel.searchHistory.collectAsState()
+    val rememberSearchHistory by viewModel.rememberSearchHistory.collectAsState()
 
     val selectedTrackIds by viewModel.selectedTrackIds.collectAsState()
     val selectedFavoriteVideoIds by viewModel.selectedFavoriteVideoIds.collectAsState()
@@ -315,15 +356,25 @@ fun HomeScreen(
                                 Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search))
                             },
                             trailingIcon = {
-                                if (currentSearchText.isNotEmpty()) {
-                                    IconButton(onClick = {
-                                        if (selectedSection == "online") {
-                                            viewModel.onOnlineQueryChanged("")
-                                        } else {
-                                            localSearchQuery = ""
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (currentSearchText.isNotEmpty()) {
+                                        IconButton(onClick = {
+                                            if (selectedSection == "online") {
+                                                viewModel.onOnlineQueryChanged("")
+                                                viewModel.openSuggestions()
+                                            } else {
+                                                localSearchQuery = ""
+                                            }
+                                        }) {
+                                            Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear))
                                         }
-                                    }) {
-                                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear))
+                                    }
+                                    IconButton(onClick = launchVoiceSearch) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Mic,
+                                            contentDescription = stringResource(R.string.voice_search),
+                                            tint = MaterialTheme.colorScheme.outline
+                                        )
                                     }
                                 }
                             },
@@ -346,6 +397,11 @@ fun HomeScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp)
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused && selectedSection == "online") {
+                                        viewModel.openSuggestions()
+                                    }
+                                }
                                 .onSizeChanged {
                                     searchBarWidth = it.width
                                     searchBarHeight = it.height
@@ -356,7 +412,10 @@ fun HomeScreen(
                             )
                         )
 
-                        if (selectedSection == "online" && showSuggestions && searchCompletions.isNotEmpty() && onlineQuery.isNotBlank()) {
+                        val displayHistory = selectedSection == "online" && rememberSearchHistory && searchHistory.isNotEmpty() && onlineQuery.isBlank()
+                        val displayCompletions = selectedSection == "online" && onlineQuery.isNotBlank() && searchCompletions.isNotEmpty()
+
+                        if (selectedSection == "online" && showSuggestions && (displayHistory || displayCompletions)) {
                             val searchBarWidthDp = with(LocalDensity.current) { searchBarWidth.toDp() }
                             Popup(
                                 alignment = Alignment.TopStart,
@@ -386,30 +445,103 @@ fun HomeScreen(
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp)
                                     ) {
-                                        searchCompletions.forEach { suggestion ->
+                                        if (displayHistory) {
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .clickable {
-                                                        viewModel.selectCompletion(suggestion)
-                                                        focusManager.clearFocus()
-                                                        keyboardController?.hide()
-                                                    }
-                                                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                                                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Icon(
-                                                    Icons.Default.Search,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(16.dp),
-                                                    tint = MaterialTheme.colorScheme.outline
-                                                )
-                                                Spacer(modifier = Modifier.width(12.dp))
                                                 Text(
-                                                    text = suggestion,
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = MaterialTheme.colorScheme.onSurface
+                                                    text = stringResource(R.string.search_history),
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontWeight = FontWeight.Bold
                                                 )
+                                                Text(
+                                                    text = stringResource(R.string.clear_history),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    modifier = Modifier.clickable {
+                                                        viewModel.clearSearchHistory()
+                                                    }
+                                                )
+                                            }
+                                            searchHistory.take(10).forEach { historyQuery ->
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable {
+                                                            viewModel.onOnlineQueryChanged(historyQuery)
+                                                            viewModel.performSearch(historyQuery)
+                                                            focusManager.clearFocus()
+                                                            keyboardController?.hide()
+                                                        }
+                                                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.weight(1f)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Rounded.History,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(18.dp),
+                                                            tint = MaterialTheme.colorScheme.outline
+                                                        )
+                                                        Spacer(modifier = Modifier.width(12.dp))
+                                                        Text(
+                                                            text = historyQuery,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = MaterialTheme.colorScheme.onSurface,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
+                                                    }
+                                                    IconButton(
+                                                        onClick = {
+                                                            viewModel.removeSearchHistoryQuery(historyQuery)
+                                                        },
+                                                        modifier = Modifier.size(24.dp)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Default.Clear,
+                                                            contentDescription = "Sil",
+                                                            modifier = Modifier.size(16.dp),
+                                                            tint = MaterialTheme.colorScheme.outline
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        } else if (displayCompletions) {
+                                            searchCompletions.forEach { suggestion ->
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable {
+                                                            viewModel.selectCompletion(suggestion)
+                                                            focusManager.clearFocus()
+                                                            keyboardController?.hide()
+                                                        }
+                                                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Search,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp),
+                                                        tint = MaterialTheme.colorScheme.outline
+                                                    )
+                                                    Spacer(modifier = Modifier.width(12.dp))
+                                                    Text(
+                                                        text = suggestion,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -469,7 +601,7 @@ fun HomeScreen(
                         )
                         if (enableOnlineFeatures) {
                             HomeCard(
-                                title = if (onlineTabLabel == "Keşfet") stringResource(R.string.discover) else onlineTabLabel,
+                                title = if (onlineTabLabel == "Keşfet" || onlineTabLabel == "YT Online") stringResource(R.string.discover) else onlineTabLabel,
                                 icon = Icons.Rounded.Search,
                                 isSelected = selectedSection == "online",
                                 onClick = {
@@ -533,8 +665,8 @@ fun HomeScreen(
                                             }
                                             viewModel.logFilterUsed(name)
                                         },
-                                        viewMode = allViewMode,
-                                        onViewModeChanged = { allViewMode = it }
+                                        viewMode = currentViewMode,
+                                        onViewModeChanged = { mode -> viewModel.setGridViewMode(mode == 1) }
                                     )
                                 }
                             } else if (selectedSection == "favorites") {
@@ -592,8 +724,8 @@ fun HomeScreen(
                                             }
                                             viewModel.logFilterUsed(name)
                                         },
-                                        viewMode = favoritesViewMode,
-                                        onViewModeChanged = { favoritesViewMode = it }
+                                        viewMode = currentViewMode,
+                                        onViewModeChanged = { mode -> viewModel.setGridViewMode(mode == 1) }
                                     )
                                 }
                             }
@@ -611,7 +743,7 @@ fun HomeScreen(
                                                     icon = Icons.Default.MusicNote
                                                 )
                                             } else {
-                                                if (allViewMode == 0) {
+                                                if (!isGridViewMode) {
                                                     LazyColumn(
                                                         modifier = Modifier.fillMaxSize(),
                                                         contentPadding = PaddingValues(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 80.dp),
@@ -903,7 +1035,7 @@ fun HomeScreen(
                                                     icon = Icons.Default.Favorite
                                                 )
                                             } else {
-                                                if (favoritesViewMode == 0) {
+                                                if (!isGridViewMode) {
                                                     LazyColumn(
                                                         modifier = Modifier.fillMaxSize(),
                                                         contentPadding = PaddingValues(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 80.dp),
@@ -1345,7 +1477,7 @@ fun HomeScreen(
                                 // ONLINE MODE
                                 if (onlineQuery.isBlank()) {
                                     HomeScreenEmptyState(
-                                        text = stringResource(R.string.online_search_prompt, if (onlineTabLabel == "Keşfet") stringResource(R.string.discover) else onlineTabLabel),
+                                        text = stringResource(R.string.online_search_prompt, if (onlineTabLabel == "Keşfet" || onlineTabLabel == "YT Online") stringResource(R.string.discover) else onlineTabLabel),
                                         icon = Icons.Default.Search
                                     )
                                 } else {

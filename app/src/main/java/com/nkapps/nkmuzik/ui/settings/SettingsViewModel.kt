@@ -52,6 +52,12 @@ class SettingsViewModel @Inject constructor(
         initialValue = LanguageManager.getLanguage()
     )
 
+    val rememberSearchHistory: StateFlow<Boolean> = themePreferences.rememberSearchHistory.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = true
+    )
+
     val isOnlineUnlocked: StateFlow<Boolean> = MutableStateFlow(true).asStateFlow()
 
     val audioFxState: StateFlow<AudioFxState> = audioFxManager.fxState
@@ -82,6 +88,18 @@ class SettingsViewModel @Inject constructor(
     fun setLanguage(lang: String) {
         viewModelScope.launch {
             themePreferences.setLanguage(lang)
+        }
+    }
+
+    fun setRememberSearchHistory(enabled: Boolean) {
+        viewModelScope.launch {
+            themePreferences.setRememberSearchHistory(enabled)
+        }
+    }
+
+    fun clearSearchHistory() {
+        viewModelScope.launch {
+            themePreferences.clearSearchHistory()
         }
     }
 

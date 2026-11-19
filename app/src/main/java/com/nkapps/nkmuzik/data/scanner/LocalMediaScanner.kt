@@ -109,18 +109,7 @@ class LocalMediaScanner @Inject constructor(
                     val localArtwork = ArtworkUtils.findArtworkForTrack(context, fileName)
                         ?: ArtworkUtils.findArtworkForTrack(context, cleanTitle)
 
-                    val artworkUri: Uri? = embeddedArtwork
-                        ?: localArtwork
-                        ?: if (albumId != -1L) {
-                            try {
-                                ContentUris.withAppendedId(
-                                    Uri.parse("content://media/external/audio/albumart"),
-                                    albumId
-                                )
-                            } catch (_: Exception) {
-                                null
-                            }
-                        } else null
+                    val artworkUri: Uri? = embeddedArtwork ?: localArtwork
 
                     tracks.add(
                         LocalAudioTrack(
