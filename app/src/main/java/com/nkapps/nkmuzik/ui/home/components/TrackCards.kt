@@ -91,6 +91,7 @@ fun LocalTrackItemCard(
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
     val dbPlaylists by viewModel.dbPlaylists.collectAsState()
     val favorites by viewModel.favorites.collectAsState()
     val isFav = remember(favorites, track) {
@@ -302,6 +303,14 @@ fun LocalTrackItemCard(
                                 )
 
                                 DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.action_edit)) },
+                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                    onClick = {
+                                        showMenu = false
+                                        showEditDialog = true
+                                    }
+                                )
+                                DropdownMenuItem(
                                     text = { Text(stringResource(R.string.delete)) },
                                     leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                     onClick = {
@@ -339,6 +348,22 @@ fun LocalTrackItemCard(
             uriString = track.uri,
             filePath = track.filePath,
             onDismiss = { showInfoDialog = false }
+        )
+    }
+
+    if (showEditDialog) {
+        var isSavingEdit by remember { mutableStateOf(false) }
+        EditTrackDialog(
+            track = track,
+            isSaving = isSavingEdit,
+            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
+                isSavingEdit = true
+                viewModel.updateLocalTrackMetaData(track, newTitle, newArtist, newAlbum, newArtworkUri) {
+                    isSavingEdit = false
+                    showEditDialog = false
+                }
+            },
+            onDismiss = { showEditDialog = false }
         )
     }
 
@@ -575,14 +600,16 @@ fun TrackCard(
                                     }
                                 )
 
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.action_edit)) },
-                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                                    onClick = {
-                                        showMenu = false
-                                        showEditDialog = true
-                                    }
-                                )
+                                if (track.url.startsWith("file://") || track.url.startsWith("/")) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_edit)) },
+                                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                        onClick = {
+                                            showMenu = false
+                                            showEditDialog = true
+                                        }
+                                    )
+                                }
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.delete)) },
                                     leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
@@ -899,6 +926,23 @@ fun LocalTrackGridCard(
             uriString = track.uri,
             filePath = track.filePath,
             onDismiss = { showInfoDialog = false }
+        )
+    }
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    if (showEditDialog) {
+        var isSavingEdit by remember { mutableStateOf(false) }
+        EditTrackDialog(
+            track = track,
+            isSaving = isSavingEdit,
+            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
+                isSavingEdit = true
+                viewModel.updateLocalTrackMetaData(track, newTitle, newArtist, newAlbum, newArtworkUri) {
+                    isSavingEdit = false
+                    showEditDialog = false
+                }
+            },
+            onDismiss = { showEditDialog = false }
         )
     }
 
