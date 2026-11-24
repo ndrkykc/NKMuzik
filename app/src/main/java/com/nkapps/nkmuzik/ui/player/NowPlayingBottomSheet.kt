@@ -69,6 +69,7 @@ import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import com.nkapps.nkmuzik.data.model.LocalTrack
 import com.nkapps.nkmuzik.data.model.LyricsData
 import com.nkapps.nkmuzik.data.model.OnlineSearchResultDto
 import com.nkapps.nkmuzik.player.SleepTimerMode
@@ -104,6 +105,7 @@ fun NowPlayingBottomSheet(
     var showEqualizerDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
     var showLyrics by remember { mutableStateOf(false) }
     var showQueueBottomSheet by remember { mutableStateOf(false) }
 
@@ -414,6 +416,15 @@ fun NowPlayingBottomSheet(
                                             uriString = track.url,
                                             title = track.title
                                         )
+                                    }
+                                )
+
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.action_edit)) },
+                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                    onClick = {
+                                        showOptionsMenu = false
+                                        showEditDialog = true
                                     }
                                 )
 
@@ -857,6 +868,36 @@ fun NowPlayingBottomSheet(
             uriString = track.url,
             filePath = null,
             onDismiss = { showInfoDialog = false }
+        )
+    }
+
+    // Edit Track Dialog
+    if (showEditDialog) {
+        var isSavingEdit by remember { mutableStateOf(false) }
+        val localTrack = LocalTrack(
+            id = track.videoId.hashCode().toLong(),
+            title = track.title,
+            artist = track.uploaderName,
+            album = "İndirilenler",
+            duration = track.durationString,
+            uri = track.url,
+            artworkUri = track.thumbnailUrl,
+            filePath = if (track.url.startsWith("file://") || track.url.startsWith("/")) track.url else null,
+            videoId = track.videoId
+        )
+
+        com.nkapps.nkmuzik.ui.common.EditTrackDialog(
+            track = localTrack,
+            isSaving = isSavingEdit,
+            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
+                isSavingEdit = true
+                viewModel.updateLocalTrackMetaData(localTrack, newTitle, newArtist, newAlbum, newArtworkUri) {
+                    isSavingEdit = false
+                    showEditDialog = false
+                    onDismiss()
+                }
+            },
+            onDismiss = { showEditDialog = false }
         )
     }
 
