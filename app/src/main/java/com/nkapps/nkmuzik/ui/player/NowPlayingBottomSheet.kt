@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import com.nkapps.nkmuzik.player.CastManager
@@ -49,6 +51,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
@@ -81,6 +84,7 @@ import kotlinx.coroutines.withContext
 import com.nkapps.nkmuzik.utils.ArtworkUtils
 import com.nkapps.nkmuzik.utils.ShareUtils
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,6 +123,9 @@ fun NowPlayingBottomSheet(
     val enableOnlineFeatures by viewModel.enableOnlineFeatures.collectAsState()
     val lyricsData by viewModel.lyricsData.collectAsState()
     val isFetchingLyrics by viewModel.isFetchingLyrics.collectAsState()
+
+    val queueItems by viewModel.queueItems.collectAsState()
+    val currentQueueIndex by viewModel.currentQueueIndex.collectAsState()
 
     val isDownloaded = remember(localTracks, track) {
         localTracks.any { (it.videoId != null && it.videoId == track.videoId) || it.id.toString() == track.videoId || it.uri == track.url } ||
@@ -424,74 +431,132 @@ fun NowPlayingBottomSheet(
                 }
             }
 
-            // 1. Media Artwork (Album Cover Image or Synchronized Lyrics in 1:1 Box)
+            // 1. Media Artwork (Full-Width HorizontalPager for Album Covers or Synchronized Lyrics)
             Box(
                 modifier = Modifier
                     .weight(1f, fill = false)
+                    .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.92f)
-                        .aspectRatio(1f)
-                        .sizeIn(maxWidth = 360.dp, maxHeight = 360.dp)
-                        .clip(MaterialTheme.shapes.large)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                ) {
-                    Crossfade(
-                        targetState = showLyrics,
-                        animationSpec = tween(durationMillis = 300),
-                        label = "ArtworkLyricsCrossfade",
-                        modifier = Modifier.fillMaxSize()
-                    ) { lyricsActive ->
-                        if (lyricsActive) {
-                            InlineLyricsView(
-                                lyricsData = lyricsData,
-                                isFetchingLyrics = isFetchingLyrics,
-                                currentPosition = currentPosition,
-                                onSeekTo = { pos -> viewModel.seekTo(pos) },
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                val artworkModel = ArtworkUtils.getArtworkModel(context, track.thumbnailUrl, track.title, track.videoId, track.durationString, track.uploaderName)
-                                if (artworkModel == null) {
-                                    DefaultArtworkView(
-                                        modifier = Modifier.fillMaxSize(),
-                                        title = track.title
-                                    )
+                Crossfade(
+                    targetState = showLyrics,
+                    animationSpec = tween(durationMillis = 300),
+                    label = "ArtworkLyricsCrossfade",
+                    modifier = Modifier.fillMaxWidth()
+                ) { lyricsActive ->
+                    if (lyricsActive) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 28.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .sizeIn(maxWidth = 360.dp, maxHeight = 360.dp)
+                                    .clip(MaterialTheme.shapes.large)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            ) {
+                                InlineLyricsView(
+                                    lyricsData = lyricsData,
+                                    isFetchingLyrics = isFetchingLyrics,
+                                    currentPosition = currentPosition,
+                                    onSeekTo = { pos -> viewModel.seekTo(pos) },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    } else {
+                        val pageCount = if (queueItems.isNotEmpty()) queueItems.size else 1
+                        val safeQueueIndex = currentQueueIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+                        val pagerState = rememberPagerState(
+                            initialPage = safeQueueIndex,
+                            pageCount = { pageCount }
+                        )
+
+                        LaunchedEffect(safeQueueIndex) {
+                            if (pagerState.currentPage != safeQueueIndex && safeQueueIndex in 0 until pageCount) {
+                                pagerState.animateScrollToPage(safeQueueIndex)
+                            }
+                        }
+
+                        LaunchedEffect(pagerState.isScrollInProgress) {
+                            if (!pagerState.isScrollInProgress) {
+                                val targetPage = pagerState.currentPage
+                                if (targetPage != safeQueueIndex && targetPage in queueItems.indices) {
+                                    viewModel.skipToQueueItem(targetPage)
+                                }
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(horizontal = 28.dp),
+                                pageSpacing = 56.dp
+                            ) { page ->
+                                val pageTrack = if (queueItems.isNotEmpty() && page in queueItems.indices) {
+                                    queueItems[page]
                                 } else {
+                                    track
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(1f)
+                                        .sizeIn(maxWidth = 360.dp, maxHeight = 360.dp)
+                                        .clip(MaterialTheme.shapes.large)
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                ) {
+                                    val artworkModel = ArtworkUtils.getArtworkModel(
+                                        context,
+                                        pageTrack.thumbnailUrl,
+                                        pageTrack.title,
+                                        pageTrack.videoId,
+                                        pageTrack.durationString,
+                                        pageTrack.uploaderName
+                                    )
                                     SubcomposeAsyncImage(
                                         model = artworkModel,
-                                        contentDescription = track.title,
+                                        contentDescription = pageTrack.title,
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop,
                                         error = {
                                             DefaultArtworkView(
                                                 modifier = Modifier.fillMaxSize(),
-                                                title = track.title
+                                                title = pageTrack.title,
+                                                trackId = pageTrack.videoId
                                             )
                                         }
                                     )
+
+                                    if (pageTrack.videoId == track.videoId) {
+                                        val coverFavoriteTint = if (isDarkTheme) yellowColor else Color.White
+                                        IconButton(
+                                            onClick = onToggleFavorite,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(8.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                                contentDescription = stringResource(R.string.section_favorites),
+                                                modifier = Modifier.size(32.dp),
+                                                tint = coverFavoriteTint
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-
-                    val coverFavoriteTint = if (isDarkTheme) yellowColor else Color.White
-                    IconButton(
-                        onClick = onToggleFavorite,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                            contentDescription = stringResource(R.string.section_favorites),
-                            modifier = Modifier.size(32.dp),
-                            tint = coverFavoriteTint
-                        )
                     }
                 }
             }
@@ -923,10 +988,11 @@ fun QueueBottomSheet(
             } else {
                 val listState = rememberLazyListState()
                 val density = LocalDensity.current
-                val itemHeightPx = with(density) { 60.dp.toPx() }
+                val itemHeightPx = with(density) { 68.dp.toPx() }
+                var measuredItemHeightPx by remember { mutableFloatStateOf(itemHeightPx) }
 
-                var draggedIndex by remember { mutableStateOf<Int?>(null) }
-                var draggedKey by remember { mutableStateOf<String?>(null) }
+                var draggedStartIndex by remember { mutableStateOf<Int?>(null) }
+                var draggedCurrentIndex by remember { mutableStateOf<Int?>(null) }
                 var dragOffsetY by remember { mutableFloatStateOf(0f) }
 
                 val stableKeys = remember(queueItems) {
@@ -939,8 +1005,8 @@ fun QueueBottomSheet(
                     }
                 }
 
-                LaunchedEffect(draggedIndex, dragOffsetY) {
-                    val currentIdx = draggedIndex ?: return@LaunchedEffect
+                LaunchedEffect(draggedCurrentIndex, dragOffsetY) {
+                    val currentIdx = draggedCurrentIndex ?: return@LaunchedEffect
                     val layoutInfo = listState.layoutInfo
                     val visibleItems = layoutInfo.visibleItemsInfo
                     if (visibleItems.isEmpty()) return@LaunchedEffect
@@ -970,17 +1036,26 @@ fun QueueBottomSheet(
                         val itemKey = stableKeys.getOrElse(index) { "$index" }
                         val isPlayingItem = index == currentQueueIndex
                         var showTrackMenu by remember { mutableStateOf(false) }
-                        val isBeingDragged = (draggedKey == itemKey)
+                        val isBeingDragged = (draggedStartIndex == index)
 
-                        val dragScale by animateFloatAsState(
-                            targetValue = if (isBeingDragged) 1.03f else 1f,
-                            animationSpec = spring(stiffness = Spring.StiffnessLow),
-                            label = "dragScale"
-                        )
-                        val dragElevation by animateDpAsState(
-                            targetValue = if (isBeingDragged) 8.dp else 0.dp,
-                            animationSpec = spring(stiffness = Spring.StiffnessLow),
-                            label = "dragElevation"
+                        val targetItemOffset = remember(draggedStartIndex, draggedCurrentIndex, index, measuredItemHeightPx) {
+                            val startIdx = draggedStartIndex
+                            val currentIdx = draggedCurrentIndex
+                            val itemHeight = if (measuredItemHeightPx > 0f) measuredItemHeightPx else itemHeightPx
+
+                            if (startIdx != null && currentIdx != null && startIdx != currentIdx) {
+                                if (startIdx < currentIdx && index in (startIdx + 1)..currentIdx) {
+                                    -itemHeight
+                                } else if (startIdx > currentIdx && index in currentIdx..<startIdx) {
+                                    itemHeight
+                                } else 0f
+                            } else 0f
+                        }
+
+                        val animatedOffset by animateFloatAsState(
+                            targetValue = if (isBeingDragged) dragOffsetY else targetItemOffset,
+                            animationSpec = tween(durationMillis = 150, easing = LinearOutSlowInEasing),
+                            label = "itemOffset"
                         )
 
                         val cardBg = MaterialTheme.colorScheme.surfaceContainer
@@ -1011,66 +1086,53 @@ fun QueueBottomSheet(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .animateItem(
-                                    fadeInSpec = null,
-                                    fadeOutSpec = null,
-                                    placementSpec = spring(
-                                        stiffness = Spring.StiffnessVeryLow,
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        visibilityThreshold = IntOffset.VisibilityThreshold
-                                    )
-                                )
+                                .onSizeChanged { if (it.height > 0) measuredItemHeightPx = it.height.toFloat() }
                                 .zIndex(if (isBeingDragged) 2f else 0f)
                                 .graphicsLayer {
-                                    scaleX = dragScale
-                                    scaleY = dragScale
-                                    translationY = if (isBeingDragged) dragOffsetY else 0f
+                                    translationY = animatedOffset
                                 }
                                 .clip(MaterialTheme.shapes.medium)
                                 .pointerInput(queueItems.size) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = {
-                                            draggedKey = itemKey
-                                            draggedIndex = index
+                                            draggedStartIndex = index
+                                            draggedCurrentIndex = index
                                             dragOffsetY = 0f
                                         },
                                         onDragEnd = {
-                                            draggedKey = null
-                                            draggedIndex = null
+                                            val startIdx = draggedStartIndex
+                                            val currentIdx = draggedCurrentIndex
+                                            if (startIdx != null && currentIdx != null && startIdx != currentIdx) {
+                                                viewModel.reorderQueue(startIdx, currentIdx)
+                                            }
+                                            draggedStartIndex = null
+                                            draggedCurrentIndex = null
                                             dragOffsetY = 0f
                                         },
                                         onDragCancel = {
-                                            draggedKey = null
-                                            draggedIndex = null
+                                            draggedStartIndex = null
+                                            draggedCurrentIndex = null
                                             dragOffsetY = 0f
                                         },
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             dragOffsetY += dragAmount.y
-                                            val currentIdx = draggedIndex ?: return@detectDragGesturesAfterLongPress
-                                            val threshold = itemHeightPx * 0.7f
+                                            val startIdx = draggedStartIndex ?: return@detectDragGesturesAfterLongPress
+                                            val effectiveHeight = if (measuredItemHeightPx > 0f) measuredItemHeightPx else itemHeightPx
 
-                                            if (dragOffsetY > threshold && currentIdx < queueItems.size - 1) {
-                                                val targetIdx = currentIdx + 1
-                                                viewModel.reorderQueue(currentIdx, targetIdx)
-                                                draggedIndex = targetIdx
-                                                dragOffsetY -= itemHeightPx
-                                            } else if (dragOffsetY < -threshold && currentIdx > 0) {
-                                                val targetIdx = currentIdx - 1
-                                                viewModel.reorderQueue(currentIdx, targetIdx)
-                                                draggedIndex = targetIdx
-                                                dragOffsetY += itemHeightPx
-                                            }
+                                            val steps = (dragOffsetY / effectiveHeight).roundToInt()
+                                            val newTargetIndex = (startIdx + steps).coerceIn(0, queueItems.size - 1)
+                                            draggedCurrentIndex = newTargetIndex
                                         }
                                     )
                                 }
                                 .clickable {
-                                    if (draggedIndex == null) {
+                                    if (draggedStartIndex == null) {
                                         viewModel.skipToQueueItem(index)
                                     }
                                 },
                             colors = CardDefaults.cardColors(containerColor = containerColor),
-                            elevation = CardDefaults.cardElevation(defaultElevation = dragElevation)
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -1154,6 +1216,16 @@ fun QueueBottomSheet(
                                             overflow = TextOverflow.Ellipsis
                                         )
                                     }
+
+                                    // Reorder Drag Handle Icon
+                                    Icon(
+                                        imageVector = Icons.Rounded.Reorder,
+                                        contentDescription = "Sırala",
+                                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                                        modifier = Modifier
+                                            .padding(horizontal = 4.dp)
+                                            .size(22.dp)
+                                    )
 
                                     // Overflow 3-dots menu
                                     Box {

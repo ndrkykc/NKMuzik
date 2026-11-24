@@ -73,9 +73,11 @@
     <string name="action_remove_from_favorites">Remove from Favorites</string>
     <string name="action_share">Share</string>
     <string name="action_info">Info</string>
+    <string name="action_edit">Edit</string>
     <string name="action_delete">Delete</string>
     <string name="action_download">Download</string>
-    <string name="action_listen">Listen</string>
+    <string name="action_listen">Play</string>
+    <string name="action_playing">Playing</string>
 
     <!-- Library Screen -->
     <string name="library_title">Library</string>
@@ -201,4 +203,13 @@
     <string name="about_desc">Version Details, Changelog &amp; Updates</string>
     <string name="whats_new_title">What\'s New?</string>
     <string name="app_build_info">Version %1$s (Build %2$d)</string>
+
+    <!-- Edit Track -->
+    <string name="edit_track_title">Edit Track Info</string>
+    <string name="edit_track_name">Track Name</string>
+    <string name="edit_track_artist">Artist</string>
+    <string name="edit_track_album">Album</string>
+    <string name="edit_track_change_cover">Change Cover</string>
+    <string name="edit_track_saving">Saving...</string>
+    <string name="edit_track_save">Save</string>
 </resources>

@@ -78,11 +78,15 @@ object ArtworkUtils {
         return if (success) stream.toByteArray() else null
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    fun getDirectOnlineThumbnailUrl(videoId: String): String = ""
+    fun getDirectOnlineThumbnailUrl(videoId: String): String {
+        if (videoId.isBlank()) return ""
+        return "https://img.youtube.com/vi/$videoId/hqdefault.jpg"
+    }
 
-    @Suppress("UNUSED_PARAMETER")
-    fun getDirectStreamThumbnailUrl(videoId: String): String = ""
+    fun getDirectStreamThumbnailUrl(videoId: String): String {
+        if (videoId.isBlank()) return ""
+        return "https://img.youtube.com/vi/$videoId/hqdefault.jpg"
+    }
 
     /**
      * Extracts cover artwork directly from embedded media metadata using MediaMetadataRetriever.embeddedPicture.

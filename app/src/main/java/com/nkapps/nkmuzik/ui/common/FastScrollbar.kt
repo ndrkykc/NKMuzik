@@ -39,12 +39,25 @@ fun FastScrollbar(
     val scope = rememberCoroutineScope()
     var barHeight by remember { mutableStateOf(0f) }
 
+    fun normalizeChar(c: Char): Char {
+        return when (c.uppercaseChar()) {
+            'Ç' -> 'C'
+            'Ğ' -> 'G'
+            'İ', 'I', 'ı' -> 'I'
+            'Ö' -> 'O'
+            'Ş' -> 'S'
+            'Ü' -> 'U'
+            in 'A'..'Z' -> c.uppercaseChar()
+            else -> '#'
+        }
+    }
+
     // Map each character to the first index in the list
     val charToIndex = remember(items) {
         val map = mutableMapOf<Char, Int>()
         items.forEachIndexed { index, item ->
-            val char = itemToChar(item).uppercaseChar()
-            val key = if (char in 'A'..'Z') char else '#'
+            val char = itemToChar(item)
+            val key = normalizeChar(char)
             if (!map.containsKey(key)) {
                 map[key] = index
             }

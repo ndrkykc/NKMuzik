@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.nkapps.nkmuzik.R
+import com.nkapps.nkmuzik.data.model.LocalTrack
 import com.nkapps.nkmuzik.data.model.OnlineSearchResultDto
 import com.nkapps.nkmuzik.ui.common.DeleteTrackConfirmationDialog
 import com.nkapps.nkmuzik.ui.common.TrackInfoDialog
@@ -50,6 +52,8 @@ fun MediaActionBottomSheet(
     val sheetState = rememberModalBottomSheetState()
     var showInfoDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var isSavingEdit by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -269,6 +273,21 @@ fun MediaActionBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
+                    OutlinedButton(
+                        onClick = {
+                            showEditDialog = true
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.action_edit), maxLines = 1)
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     OutlinedButton(
                         onClick = {
@@ -281,13 +300,41 @@ fun MediaActionBottomSheet(
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = null)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.delete), maxLines = 1)
+                        Text(stringResource(R.string.action_delete), maxLines = 1)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    if (showEditDialog) {
+        val localTrack = LocalTrack(
+            id = track.videoId.hashCode().toLong(),
+            title = track.title,
+            artist = track.uploaderName,
+            album = "İndirilenler",
+            duration = track.durationString,
+            uri = track.url,
+            artworkUri = track.thumbnailUrl,
+            filePath = if (track.url.startsWith("file://") || track.url.startsWith("/")) track.url else null,
+            videoId = track.videoId
+        )
+
+        com.nkapps.nkmuzik.ui.common.EditTrackDialog(
+            track = localTrack,
+            isSaving = isSavingEdit,
+            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
+                isSavingEdit = true
+                viewModel?.updateLocalTrackMetaData(localTrack, newTitle, newArtist, newAlbum, newArtworkUri) {
+                    isSavingEdit = false
+                    showEditDialog = false
+                    onDismiss()
+                }
+            },
+            onDismiss = { showEditDialog = false }
+        )
     }
 
     if (showInfoDialog) {

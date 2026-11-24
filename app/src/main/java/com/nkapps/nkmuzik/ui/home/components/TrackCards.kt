@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
@@ -63,6 +64,7 @@ import com.nkapps.nkmuzik.data.model.LocalTrack
 import com.nkapps.nkmuzik.data.model.OnlineSearchResultDto
 import com.nkapps.nkmuzik.ui.common.DeleteTrackConfirmationDialog
 import com.nkapps.nkmuzik.ui.common.TrackInfoDialog
+import com.nkapps.nkmuzik.ui.common.EditTrackDialog
 import com.nkapps.nkmuzik.ui.library.AddToPlaylistDialog
 import com.nkapps.nkmuzik.ui.search.SearchViewModel
 import com.nkapps.nkmuzik.ui.theme.MysticGoldMat
@@ -368,6 +370,8 @@ fun TrackCard(
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var isSavingEdit by remember { mutableStateOf(false) }
     val dbPlaylists by viewModel.dbPlaylists.collectAsState()
 
     val cardBg = MaterialTheme.colorScheme.surfaceContainer
@@ -572,6 +576,14 @@ fun TrackCard(
                                 )
 
                                 DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.action_edit)) },
+                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                    onClick = {
+                                        showMenu = false
+                                        showEditDialog = true
+                                    }
+                                )
+                                DropdownMenuItem(
                                     text = { Text(stringResource(R.string.delete)) },
                                     leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                     onClick = {
@@ -585,6 +597,33 @@ fun TrackCard(
                 }
             }
         }
+    }
+
+    if (showEditDialog) {
+        val localTrack = LocalTrack(
+            id = track.videoId.hashCode().toLong(),
+            title = track.title,
+            artist = track.uploaderName,
+            album = "İndirilenler",
+            duration = track.durationString,
+            uri = track.url,
+            artworkUri = track.thumbnailUrl,
+            filePath = if (track.url.startsWith("file://") || track.url.startsWith("/")) track.url else null,
+            videoId = track.videoId
+        )
+
+        EditTrackDialog(
+            track = localTrack,
+            isSaving = isSavingEdit,
+            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
+                isSavingEdit = true
+                viewModel.updateLocalTrackMetaData(localTrack, newTitle, newArtist, newAlbum, newArtworkUri) {
+                    isSavingEdit = false
+                    showEditDialog = false
+                }
+            },
+            onDismiss = { showEditDialog = false }
+        )
     }
 
     if (showAddToPlaylistDialog) {

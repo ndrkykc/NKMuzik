@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -32,7 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.nkapps.nkmuzik.ui.theme.DeepNightBlue
+import com.nkapps.nkmuzik.ui.theme.MysticGoldMat
 
 fun getRequiredPermissions(): Array<String> {
     val permissions = mutableListOf<String>()
@@ -41,6 +45,7 @@ fun getRequiredPermissions(): Array<String> {
         permissions.add(Manifest.permission.POST_NOTIFICATIONS)
     } else {
         permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
     return permissions.toTypedArray()
 }
@@ -59,6 +64,91 @@ fun checkPermissionsGranted(context: Context): Boolean {
     return required.all { permission ->
         context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
     }
+}
+
+@Composable
+fun PermissionRationaleDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Security,
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
+                tint = MysticGoldMat
+            )
+        },
+        title = {
+            Text(
+                text = "İzin İsteği",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "NK Müzik uygulamasının sorunsuz çalışabilmesi için aşağıdaki izinlere ihtiyacı vardır:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LibraryMusic,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Medya / Depolama: Cihazınızdaki ses dosyalarını taramak, kütüphanede göstermek, yönetmek için.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Bildirimler: Arka planda müzik çalarken kilit ekranı ve bildirim kontrollerini sunmak için.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MysticGoldMat,
+                    contentColor = DeepNightBlue
+                )
+            ) {
+                Text("İzin Ver", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Daha Sonra")
+            }
+        }
+    )
 }
 
 @Composable
@@ -83,7 +173,7 @@ fun PermissionHandler(
 
     LaunchedEffect(Unit) {
         if (!hasPermissions) {
-            kotlinx.coroutines.delay(2000) // 2 saniye gecikme
+            kotlinx.coroutines.delay(2000)
             showDialog = true
         } else {
             onPermissionsGranted()
@@ -91,85 +181,13 @@ fun PermissionHandler(
     }
 
     if (showDialog && !hasPermissions) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Security,
-                    contentDescription = null,
-                    modifier = Modifier.size(36.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+        PermissionRationaleDialog(
+            onConfirm = {
+                permissionLauncher.launch(getRequiredPermissions())
             },
-            title = {
-                Text(
-                    text = "İzin İsteği",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "NK Müzik uygulamasının sorunsuz çalışabilmesi için aşağıdaki izinlere ihtiyacı vardır:",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LibraryMusic,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Medya / Depolama: Cihazınızdaki ses dosyalarını taramak ve kütüphanede göstermek için.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Bildirimler: Arka planda müzik çalarken kilit ekranı ve bildirim kontrollerini sunmak için.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        permissionLauncher.launch(getRequiredPermissions())
-                    }
-                ) {
-                    Text("İzin Ver")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { 
-                        showDialog = false
-                        onPermissionsGranted() // Uyarıyı kapatınca uygulamanın açılmasına izin ver
-                    }
-                ) {
-                    Text("Daha Sonra")
-                }
+            onDismiss = {
+                showDialog = false
+                onPermissionsGranted()
             }
         )
     }

@@ -331,6 +331,15 @@ fun HomeScreen(
                         var searchBarWidth by remember { mutableIntStateOf(0) }
                         var searchBarHeight by remember { mutableIntStateOf(0) }
 
+                        val placeholderPhrases = remember(selectedSection) {
+                            when (selectedSection) {
+                                "online" -> listOf("Online ara...", "Şarkı ara...", "Sanatçı ara...", "Albüm ara...")
+                                "favorites" -> listOf("Favorilerde ara...")
+                                "playlists" -> listOf("Çalma listesinde ara...")
+                                else -> listOf("Şarkı ara...", "Sanatçı ara...", "Albüm ara...")
+                            }
+                        }
+
                         OutlinedTextField(
                             value = currentSearchText,
                             onValueChange = { query ->
@@ -342,14 +351,11 @@ fun HomeScreen(
                             },
                             textStyle = LocalTextStyle.current.copy(fontSize = 15.sp),
                             placeholder = {
-                                Text(
-                                    when (selectedSection) {
-                                        "online" -> if (isOnlineSearchSource) "Online ara..." else "Ara..."
-                                        "favorites" -> stringResource(R.string.search_hint_favorites)
-                                        "playlists" -> stringResource(R.string.search_hint_playlists)
-                                        else -> stringResource(R.string.search_hint_all)
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp)
+                                com.nkapps.nkmuzik.ui.common.TypewriterPlaceholder(
+                                    phrases = placeholderPhrases,
+                                    isSearching = currentSearchText.isNotEmpty(),
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                             },
                             leadingIcon = {

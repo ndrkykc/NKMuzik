@@ -3,9 +3,12 @@ package com.nkapps.nkmuzik.ui.search
 import android.app.Application
 import android.content.ComponentName
 import android.content.Context
-import android.net.Uri
 import android.media.MediaMetadataRetriever
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -290,6 +293,31 @@ class SearchViewModel @Inject constructor(
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
+    private val _deleteIntentSender = MutableStateFlow<IntentSenderRequest?>(null)
+    val deleteIntentSender: StateFlow<IntentSenderRequest?> = _deleteIntentSender.asStateFlow()
+
+    fun clearDeleteIntentSender() {
+        _deleteIntentSender.value = null
+    }
+
+    private val _editIntentSender = MutableStateFlow<IntentSenderRequest?>(null)
+    val editIntentSender: StateFlow<IntentSenderRequest?> = _editIntentSender.asStateFlow()
+
+    fun clearEditIntentSender() {
+        _editIntentSender.value = null
+    }
+
+    data class PendingEditTrackData(
+        val track: LocalTrack,
+        val newTitle: String,
+        val newArtist: String,
+        val newAlbum: String,
+        val newArtworkUri: Uri?,
+        val onComplete: (() -> Unit)?
+    )
+
+    private var pendingEditTrackData: PendingEditTrackData? = null
 
     private val _currentPosition = MutableStateFlow(0L)
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
@@ -1377,10 +1405,24 @@ class SearchViewModel @Inject constructor(
                 )
 
                 if (uriString.startsWith("content://")) {
+                    val uri = Uri.parse(uriString)
                     try {
-                        context.contentResolver.delete(Uri.parse(uriString), null, null)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                        context.contentResolver.delete(uri, null, null)
+                    } catch (securityException: Exception) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            try {
+                                val pendingIntent = MediaStore.createDeleteRequest(context.contentResolver, listOf(uri))
+                                _deleteIntentSender.value = IntentSenderRequest.Builder(pendingIntent.intentSender).build()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+                            val recoverableException = securityException as? android.app.RecoverableSecurityException
+                            if (recoverableException != null) {
+                                val intentSender = recoverableException.userAction.actionIntent.intentSender
+                                _deleteIntentSender.value = IntentSenderRequest.Builder(intentSender).build()
+                            }
+                        }
                     }
                 } else if (uriString.startsWith("file://")) {
                     try {
@@ -1463,6 +1505,97 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    fun updateLocalTrackMetaData(
+        track: LocalTrack,
+        newTitle: String,
+        newArtist: String,
+        newAlbum: String,
+        newArtworkUri: Uri?,
+        onComplete: (() -> Unit)? = null
+    ) {
+        val actualPath = track.filePath ?: if (track.uri.startsWith("/")) track.uri else if (track.uri.startsWith("file://")) Uri.parse(track.uri).path else null
+        
+        if (actualPath.isNullOrBlank()) {
+            _toastMessage.value = "Dosya yolu bulunamadı"
+            onComplete?.invoke()
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val file = File(actualPath)
+                if (!file.exists()) {
+                    _toastMessage.value = "Dosya mevcut değil"
+                    onComplete?.invoke()
+                    return@launch
+                }
+
+                val tempArtworkFile = newArtworkUri?.let { uri ->
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val tempFile = File(context.cacheDir, "temp_edit_artwork_${System.currentTimeMillis()}.jpg")
+                    inputStream?.use { input ->
+                        tempFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    tempFile
+                }
+
+                try {
+                    com.nkapps.nkmuzik.downloader.ArtworkEmbedder.embedArtwork(
+                        audioFile = file,
+                        artworkFile = tempArtworkFile,
+                        title = newTitle,
+                        artist = newArtist,
+                        album = newAlbum
+                    )
+                } catch (securityException: SecurityException) {
+                    tempArtworkFile?.delete()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        try {
+                            val uri = Uri.parse(track.uri)
+                            val pendingIntent = MediaStore.createWriteRequest(context.contentResolver, listOf(uri))
+                            pendingEditTrackData = PendingEditTrackData(track, newTitle, newArtist, newAlbum, newArtworkUri, onComplete)
+                            _editIntentSender.value = IntentSenderRequest.Builder(pendingIntent.intentSender).build()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            onComplete?.invoke()
+                        }
+                    } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+                        val recoverableException = securityException as? android.app.RecoverableSecurityException
+                        if (recoverableException != null) {
+                            val intentSender = recoverableException.userAction.actionIntent.intentSender
+                            pendingEditTrackData = PendingEditTrackData(track, newTitle, newArtist, newAlbum, newArtworkUri, onComplete)
+                            _editIntentSender.value = IntentSenderRequest.Builder(intentSender).build()
+                        } else {
+                            onComplete?.invoke()
+                        }
+                    } else {
+                        onComplete?.invoke()
+                    }
+                    return@launch
+                }
+
+                tempArtworkFile?.delete()
+
+                try {
+                    MediaScannerConnection.scanFile(context, arrayOf(actualPath), null) { _, _ ->
+                        loadLocalTracks()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    loadLocalTracks()
+                }
+
+                onComplete?.invoke()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _toastMessage.value = "Hata: ${e.message}"
+                onComplete?.invoke()
+            }
+        }
+    }
+
     fun deleteTrack(localTrack: LocalTrack, onComplete: (() -> Unit)? = null) {
         deleteTrack(
             trackId = localTrack.id.toString(),
@@ -1483,8 +1616,8 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun buildMediaItemForTrackFast(track: OnlineSearchResultDto, resolvedAudioUrl: String? = null): MediaItem {
-        val resolvedArt = ArtworkUtils.getArtworkModel(context, track.thumbnailUrl, track.title, track.videoId)?.data?.toString()
-            ?: ArtworkUtils.getDirectOnlineThumbnailUrl(track.videoId)
+        val rawArt = ArtworkUtils.getRawArtworkModel(context, track.thumbnailUrl, track.title, track.videoId, track.durationString, track.uploaderName)?.toString()
+        val resolvedArt = rawArt ?: ArtworkUtils.getDirectOnlineThumbnailUrl(track.videoId)
 
         val isLocal = track.url.startsWith("content://") || track.url.startsWith("file://") || track.url.startsWith("/")
         val audioUrl = when {
@@ -1493,7 +1626,12 @@ class SearchViewModel @Inject constructor(
             else -> track.url
         }
 
-        val validUri = getValidMediaUri(audioUrl)
+        val validUri = if (isLocal) {
+            val actualPath = if (audioUrl.startsWith("file://")) Uri.parse(audioUrl).path else if (audioUrl.startsWith("/")) audioUrl else null
+            getValidMediaUri(audioUrl, actualPath)
+        } else {
+            getValidMediaUri(audioUrl, null)
+        }
         val mimeType = if (isLocal) inferMimeType(audioUrl, track.url, null) else null
 
         val builder = MediaItem.Builder()

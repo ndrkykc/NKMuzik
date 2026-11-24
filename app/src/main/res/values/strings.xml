@@ -73,9 +73,11 @@
     <string name="action_remove_from_favorites">Favorilerden Çıkar</string>
     <string name="action_share">Paylaş</string>
     <string name="action_info">Bilgi</string>
+    <string name="action_edit">Düzenle</string>
     <string name="action_delete">Sil</string>
     <string name="action_download">İndir</string>
-    <string name="action_listen">Dinle</string>
+    <string name="action_listen">Oynat</string>
+    <string name="action_playing">Oynatılıyor</string>
 
     <!-- Library Screen -->
     <string name="library_title">Kitaplık</string>
@@ -201,4 +203,13 @@
     <string name="about_desc">Sürüm Detayları, Yenilikler ve Güncellemeler</string>
     <string name="whats_new_title">Neler Yeni?</string>
     <string name="app_build_info">Sürüm %1$s (Build %2$d)</string>
+
+    <!-- Edit Track -->
+    <string name="edit_track_title">Şarkı Bilgilerini Düzenle</string>
+    <string name="edit_track_name">Şarkı Adı</string>
+    <string name="edit_track_artist">Sanatçı</string>
+    <string name="edit_track_album">Albüm</string>
+    <string name="edit_track_change_cover">Görseli Değiştir</string>
+    <string name="edit_track_saving">Kaydediliyor...</string>
+    <string name="edit_track_save">Kaydet</string>
 </resources>

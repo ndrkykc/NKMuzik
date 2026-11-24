@@ -159,6 +159,10 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
                     var searchBarWidth by remember { mutableIntStateOf(0) }
                     var searchBarHeight by remember { mutableIntStateOf(0) }
 
+                    val onlinePhrases = remember {
+                        listOf("Online ara...", "Şarkı ara...", "Sanatçı ara...", "Albüm ara...")
+                    }
+
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.onQueryChanged(it) },
@@ -171,9 +175,11 @@ fun OnlineSearchScreen(viewModel: SearchViewModel) {
                             },
                         textStyle = LocalTextStyle.current.copy(fontSize = 15.sp),
                         placeholder = {
-                            Text(
-                                if (isOnlineSearchSource) "Çevrimiçi ara..." else "Cihazımda ara...",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp)
+                            com.nkapps.nkmuzik.ui.common.TypewriterPlaceholder(
+                                phrases = onlinePhrases,
+                                isSearching = searchQuery.isNotEmpty(),
+                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                         },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },

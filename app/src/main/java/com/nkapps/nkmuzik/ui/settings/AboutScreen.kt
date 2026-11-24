@@ -188,7 +188,7 @@ fun AboutScreen(
                     ChangelogItemData(
                         icon = Icons.Rounded.ColorLens,
                         title = "YT Online",
-                        description = "Çevrimiçi müzik arama butonunun ve navigasyon alanının \"YT Online\" olarak yenilendi."
+                        description = "Çevrimiçi müzik arama butonunun ve navigasyon alanı \"YT Online\" olarak yenilendi."
                     )
                 )
 

@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import com.nkapps.nkmuzik.ui.theme.DeepNightBlue
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
@@ -57,6 +59,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.nkapps.nkmuzik.R
 import com.nkapps.nkmuzik.data.model.OnlineSearchResultDto
@@ -86,6 +89,15 @@ fun OnlineSearchLiveCard(
     var showInfoDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val dbPlaylists by viewModel.dbPlaylists.collectAsState()
+    val currentPlayingTrack by viewModel.currentPlayingTrack.collectAsState()
+    val isPlaying by viewModel.isPlaying.collectAsState()
+    val isCurrentlyPlayingTrack = remember(currentPlayingTrack, track) {
+        val curr = currentPlayingTrack
+        curr != null && (
+            (!curr.videoId.isNullOrBlank() && curr.videoId == track.videoId) ||
+            (!curr.url.isNullOrBlank() && curr.url == track.url)
+        )
+    }
 
     val onDownloadClick: () -> Unit = {
         focusManager.clearFocus()
@@ -184,21 +196,43 @@ fun OnlineSearchLiveCard(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val isDarkTheme = MaterialTheme.colorScheme.background == DeepNightBlue
+                        val playButtonContainerColor = when {
+                            isCurrentlyPlayingTrack -> if (isDarkTheme) MysticGoldMat.copy(alpha = 0.20f) else MaterialTheme.colorScheme.primaryContainer
+                            else -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
+                        }
+                        val playButtonContentColor = when {
+                            isCurrentlyPlayingTrack -> if (isDarkTheme) MysticGoldMat else MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                        val playButtonBorderColor = when {
+                            isCurrentlyPlayingTrack -> if (isDarkTheme) MysticGoldMat else MaterialTheme.colorScheme.primary
+                            else -> MysticGoldMat.copy(alpha = 0.60f)
+                        }
+
                         FilledTonalButton(
                             onClick = onPlayStreamClick,
-                            border = BorderStroke(1.dp, MysticGoldMat.copy(alpha = 0.60f)),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+                            border = BorderStroke(1.dp, playButtonBorderColor),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = playButtonContainerColor,
+                                contentColor = playButtonContentColor
+                            ),
                             modifier = Modifier
-                                .height(32.dp)
+                                .height(34.dp)
                                 .defaultMinSize(minWidth = 84.dp)
                         ) {
                             Icon(
-                                Icons.Default.PlayArrow,
+                                imageVector = Icons.Default.PlayArrow,
                                 contentDescription = stringResource(R.string.action_listen),
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(16.dp),
+                                tint = playButtonContentColor
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(stringResource(R.string.action_listen), style = MaterialTheme.typography.labelSmall)
+                            Text(
+                                text = stringResource(R.string.action_listen),
+                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = if (isCurrentlyPlayingTrack) FontWeight.Bold else FontWeight.SemiBold)
+                            )
                         }
 
                         if (enableDownloads) {
@@ -209,7 +243,7 @@ fun OnlineSearchLiveCard(
                                         border = BorderStroke(1.dp, MysticGoldMat),
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                                         modifier = Modifier
-                                            .height(32.dp)
+                                            .height(34.dp)
                                             .defaultMinSize(minWidth = 84.dp)
                                     ) {
                                         CircularProgressIndicator(
@@ -220,7 +254,7 @@ fun OnlineSearchLiveCard(
                                             trackColor = MysticGoldMat.copy(alpha = 0.2f)
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text("İptal", style = MaterialTheme.typography.labelSmall)
+                                        Text("İptal", style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
                                     }
                                 }
                                 DownloadStatus.COMPLETED -> {
@@ -229,7 +263,7 @@ fun OnlineSearchLiveCard(
                                         border = BorderStroke(1.dp, Color(0xFF4CAF50).copy(alpha = 0.60f)),
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                                         modifier = Modifier
-                                            .height(32.dp)
+                                            .height(34.dp)
                                             .defaultMinSize(minWidth = 84.dp),
                                         colors = ButtonDefaults.filledTonalButtonColors(
                                             containerColor = Color(0xFF4CAF50).copy(alpha = 0.15f),
@@ -243,7 +277,7 @@ fun OnlineSearchLiveCard(
                                             tint = Color(0xFF4CAF50)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("İndirildi", style = MaterialTheme.typography.labelSmall)
+                                        Text("İndirildi", style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
                                     }
                                 }
                                 else -> {
@@ -252,7 +286,7 @@ fun OnlineSearchLiveCard(
                                         border = BorderStroke(1.dp, MysticGoldMat.copy(alpha = 0.60f)),
                                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
                                         modifier = Modifier
-                                            .height(32.dp)
+                                            .height(34.dp)
                                             .defaultMinSize(minWidth = 84.dp)
                                     ) {
                                         Icon(
@@ -261,7 +295,7 @@ fun OnlineSearchLiveCard(
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text(stringResource(R.string.action_download), style = MaterialTheme.typography.labelSmall)
+                                        Text(stringResource(R.string.action_download), style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
                                     }
                                 }
                             }

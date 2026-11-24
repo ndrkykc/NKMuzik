@@ -42,12 +42,12 @@ object ArtworkEmbedder {
      */
     fun embedArtwork(
         audioFile: File,
-        artworkFile: File,
+        artworkFile: File?,
         title: String? = null,
-        artist: String? = null
+        artist: String? = null,
+        album: String? = null
     ): Boolean {
         if (!audioFile.exists() || audioFile.length() <= 0) return false
-        if (!artworkFile.exists() || artworkFile.length() <= 0) return false
 
         return try {
             val audioFileObj = AudioFileIO.read(audioFile)
@@ -69,15 +69,25 @@ object ArtworkEmbedder {
                 }
             }
 
-            try {
-                tag.deleteArtworkField()
-            } catch (_: Throwable) {
-                // Ignore failure when clearing existing artwork
+            if (!album.isNullOrBlank()) {
+                try {
+                    tag.setField(FieldKey.ALBUM, album)
+                } catch (_: Throwable) {
+                    // Ignore individual album field write failures
+                }
             }
 
-            val artwork = ArtworkFactory.createArtworkFromFile(artworkFile)
-            if (artwork != null) {
-                tag.setField(artwork)
+            if (artworkFile != null && artworkFile.exists() && artworkFile.length() > 0) {
+                try {
+                    tag.deleteArtworkField()
+                } catch (_: Throwable) {
+                    // Ignore failure when clearing existing artwork
+                }
+
+                val artwork = ArtworkFactory.createArtworkFromFile(artworkFile)
+                if (artwork != null) {
+                    tag.setField(artwork)
+                }
             }
 
             AudioFileIO.write(audioFileObj)
@@ -96,7 +106,8 @@ object ArtworkEmbedder {
         audioFile: File,
         artworkBytes: ByteArray,
         title: String? = null,
-        artist: String? = null
+        artist: String? = null,
+        album: String? = null
     ): Boolean {
         if (!audioFile.exists() || audioFile.length() <= 0) return false
         if (artworkBytes.isEmpty()) return false
@@ -111,7 +122,7 @@ object ArtworkEmbedder {
         }
 
         return try {
-            embedArtwork(audioFile, tempArtworkFile, title, artist)
+            embedArtwork(audioFile, tempArtworkFile, title, artist, album)
         } finally {
             try {
                 if (tempArtworkFile.exists()) {

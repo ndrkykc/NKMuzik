@@ -12,6 +12,7 @@ import com.nkapps.nkmuzik.data.scanner.LocalMediaScanner
 import com.nkapps.nkmuzik.downloader.DownloadRepository
 import com.nkapps.nkmuzik.utils.MediaTitleParser
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.nkapps.nkmuzik.ui.search.matchesSearchQuery
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
@@ -41,9 +42,9 @@ class LocalMediaRepositoryImpl @Inject constructor(
             audioTracks
         } else {
             audioTracks.filter { track ->
-                track.title.contains(query, ignoreCase = true) ||
-                track.artist.contains(query, ignoreCase = true) ||
-                track.album.contains(query, ignoreCase = true)
+                track.title.matchesSearchQuery(query) ||
+                track.artist.matchesSearchQuery(query) ||
+                track.album.matchesSearchQuery(query)
             }
         }
         val dtos = filtered.map { audioTrack ->

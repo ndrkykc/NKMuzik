@@ -72,10 +72,14 @@ class OnlineSearchRepositoryImpl @Inject constructor(
                         val rawTitle = item.name ?: ""
                         val rawArtist = item.uploaderName ?: ""
                         val durationStr = formatDuration(item.duration)
-                        val thumbUrl = item.thumbnails.firstOrNull()?.url ?: ""
+                        val thumbUrl = item.thumbnails.maxByOrNull { it.height * it.width }?.url
+                            ?: item.thumbnails.lastOrNull()?.url
+                            ?: if (videoId.isNotBlank()) "https://img.youtube.com/vi/$videoId/hqdefault.jpg" else ""
 
                         if (rawTitle.isNotBlank()) {
-                            val parsed = MediaTitleParser.parse(rawTitle, rawArtist)
+                            val cleanTitle = unescapeHtmlEntities(rawTitle)
+                            val cleanArtist = unescapeHtmlEntities(rawArtist)
+                            val parsed = MediaTitleParser.parse(cleanTitle, cleanArtist)
                             results.add(
                                 OnlineSearchResultDto(
                                     videoId = videoId,
@@ -111,11 +115,20 @@ class OnlineSearchRepositoryImpl @Inject constructor(
         return String.format("%d:%02d", m, s)
     }
 
+    private fun unescapeHtmlEntities(text: String): String {
+        if (text.isBlank() || !text.contains("&")) return text
+        return try {
+            android.text.Html.fromHtml(text, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
+        } catch (_: Exception) {
+            text
+        }
+    }
+
     override suspend fun getSearchCompletions(query: String): List<String> = withContext(Dispatchers.IO) {
         if (!isOnlineEnabled() || query.isBlank()) return@withContext emptyList()
         try {
             val suggestions = ServiceList.YouTube.suggestionExtractor.suggestionList(query)
-            return@withContext suggestions.map { it }
+            return@withContext suggestions.map { unescapeHtmlEntities(it) }
         } catch (e: Exception) {
             logError("OnlineSearch", "NewPipe suggestions failed: ${e.message}")
         }
@@ -181,7 +194,9 @@ class OnlineSearchRepositoryImpl @Inject constructor(
                         bitrate = bestStream.averageBitrate,
                         title = streamExtractor.name ?: "",
                         uploaderName = streamExtractor.uploaderName ?: "",
-                        thumbnailUrl = streamExtractor.thumbnails.firstOrNull()?.url ?: "",
+                        thumbnailUrl = streamExtractor.thumbnails.maxByOrNull { it.height * it.width }?.url
+                            ?: streamExtractor.thumbnails.lastOrNull()?.url
+                            ?: if (cleanVideoId.isNotBlank()) "https://img.youtube.com/vi/$cleanVideoId/hqdefault.jpg" else "",
                         // Şifre artık NewPipe'ın downloader'ı tarafından çözüldüğü için özel başlığa gerek yok
                         headers = emptyMap()
                     )
