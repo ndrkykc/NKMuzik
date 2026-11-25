@@ -825,50 +825,12 @@ class SearchViewModel @Inject constructor(
             return true
         }
 
-        // 2. Direct physical disk check in Music directory and subdirectories
-        val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-        val appDirs = listOfNotNull(musicDir, File(musicDir, "NK Müzik"), File(musicDir, "NK Muzik"))
-
-        val parsed = MediaTitleParser.parse(track.title, track.uploaderName.ifBlank { null })
-        val cleanTitle = parsed.title
-        val cleanArtist = parsed.artist
-
-        val parsedFormatted = if (cleanArtist.isNotBlank() && !cleanTitle.lowercase().startsWith(cleanArtist.lowercase())) {
-            "$cleanArtist - $cleanTitle"
-        } else {
-            cleanTitle
-        }
-        val sanitizedParsedTitle = parsedFormatted.replace(Regex("[\\\\/:*?\"<>|]"), "_")
-
-        val rawFormatted = if (track.uploaderName.isNotBlank() && !track.title.lowercase().startsWith(track.uploaderName.lowercase())) {
-            "${track.uploaderName} - ${track.title}"
-        } else {
-            track.title
-        }
-        val sanitizedRawFormatted = rawFormatted.replace(Regex("[\\\\/:*?\"<>|]"), "_")
-        val sanitizedRawTitle = track.title.replace(Regex("[\\\\/:*?\"<>|]"), "_")
-
-        val diskFileExists = appDirs.any { dir ->
-            listOf("m4a", "webm", "mp3").any { ext ->
-                File(dir, "$sanitizedParsedTitle.$ext").exists() ||
-                File(dir, "$sanitizedRawFormatted.$ext").exists() ||
-                File(dir, "$sanitizedRawTitle.$ext").exists() ||
-                File(dir, "$cleanTitle.$ext").exists()
-            }
-        }
-        if (diskFileExists) {
-            return true
-        }
-
-        // 3. Check in localTracks by videoId, title, or file name
+        // 2. Exact match in localTracks by unique videoId or content/file URI containing videoId
         val matchingLocal = _localTracks.value.find { local ->
             (local.videoId != null && local.videoId == track.videoId) ||
             local.id.toString() == track.videoId ||
             (local.uri.isNotBlank() && local.uri.contains(track.videoId)) ||
-            local.title.equals(track.title, ignoreCase = true) ||
-            local.title.equals(sanitizedParsedTitle, ignoreCase = true) ||
-            local.title.equals(sanitizedRawTitle, ignoreCase = true) ||
-            (local.filePath != null && (local.filePath.contains(sanitizedParsedTitle, ignoreCase = true) || local.filePath.contains(sanitizedRawTitle, ignoreCase = true)))
+            (local.filePath != null && local.filePath.contains(track.videoId))
         }
 
         if (matchingLocal != null) {
@@ -1511,9 +1473,33 @@ class SearchViewModel @Inject constructor(
         newArtist: String,
         newAlbum: String,
         newArtworkUri: Uri?,
+        newComposer: String? = null,
+        newYear: String? = null,
+        newGenre: String? = null,
+        newTrackNumber: String? = null,
+        newComment: String? = null,
+        newLyrics: String? = null,
         onComplete: (() -> Unit)? = null
     ) {
-        val actualPath = track.filePath ?: if (track.uri.startsWith("/")) track.uri else if (track.uri.startsWith("file://")) Uri.parse(track.uri).path else null
+        var actualPath = track.filePath ?: if (track.uri.startsWith("/")) track.uri else if (track.uri.startsWith("file://")) Uri.parse(track.uri).path else null
+
+        if (actualPath.isNullOrBlank() && track.uri.startsWith("content://")) {
+            try {
+                val cursor = context.contentResolver.query(
+                    Uri.parse(track.uri),
+                    arrayOf(MediaStore.Audio.Media.DATA),
+                    null, null, null
+                )
+                cursor?.use {
+                    if (it.moveToFirst()) {
+                        val idx = it.getColumnIndex(MediaStore.Audio.Media.DATA)
+                        if (idx != -1) {
+                            actualPath = it.getString(idx)
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }
         
         if (actualPath.isNullOrBlank()) {
             _toastMessage.value = "Dosya yolu bulunamadı"
@@ -1547,7 +1533,13 @@ class SearchViewModel @Inject constructor(
                         artworkFile = tempArtworkFile,
                         title = newTitle,
                         artist = newArtist,
-                        album = newAlbum
+                        album = newAlbum,
+                        composer = newComposer,
+                        year = newYear,
+                        genre = newGenre,
+                        trackNumber = newTrackNumber,
+                        comment = newComment,
+                        lyrics = newLyrics
                     )
                 } catch (securityException: SecurityException) {
                     tempArtworkFile?.delete()
@@ -1577,6 +1569,32 @@ class SearchViewModel @Inject constructor(
                 }
 
                 tempArtworkFile?.delete()
+
+                val updatedArtworkStr = newArtworkUri?.toString() ?: track.artworkUri
+
+                _localTracks.value = _localTracks.value.map { item ->
+                    if (item.id == track.id || item.uri == track.uri || (actualPath != null && item.filePath == actualPath)) {
+                        item.copy(
+                            title = newTitle.ifBlank { item.title },
+                            artist = newArtist.ifBlank { item.artist },
+                            album = newAlbum.ifBlank { item.album },
+                            artworkUri = updatedArtworkStr
+                        )
+                    } else {
+                        item
+                    }
+                }
+
+                val playing = _currentPlayingTrack.value
+                if (playing != null && (playing.videoId == track.id.toString() || playing.url == track.uri)) {
+                    _currentPlayingTrack.value = playing.copy(
+                        title = newTitle.ifBlank { playing.title },
+                        uploaderName = newArtist.ifBlank { playing.uploaderName },
+                        thumbnailUrl = updatedArtworkStr ?: playing.thumbnailUrl
+                    )
+                }
+
+                _toastMessage.value = "Şarkı bilgileri güncellendi"
 
                 try {
                     MediaScannerConnection.scanFile(context, arrayOf(actualPath), null) { _, _ ->
@@ -1874,16 +1892,19 @@ class SearchViewModel @Inject constructor(
     }
 
     fun reorderQueue(fromIndex: Int, toIndex: Int) {
-        mediaController?.let { controller ->
-            if (fromIndex in 0 until controller.mediaItemCount && toIndex in 0 until controller.mediaItemCount) {
-                controller.moveMediaItem(fromIndex, toIndex)
-                val currentList = _queueItems.value.toMutableList()
-                if (fromIndex in currentList.indices && toIndex in currentList.indices) {
-                    val item = currentList.removeAt(fromIndex)
-                    currentList.add(toIndex, item)
-                    _queueItems.value = currentList
-                } else {
-                    updateQueueFromController()
+        val currentList = _queueItems.value.toMutableList()
+        if (fromIndex in currentList.indices && toIndex in currentList.indices && fromIndex != toIndex) {
+            val item = currentList.removeAt(fromIndex)
+            currentList.add(toIndex, item)
+            _queueItems.value = currentList
+
+            mediaController?.let { controller ->
+                if (fromIndex in 0 until controller.mediaItemCount && toIndex in 0 until controller.mediaItemCount) {
+                    try {
+                        controller.moveMediaItem(fromIndex, toIndex)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
         }

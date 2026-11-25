@@ -11,6 +11,7 @@ import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -19,6 +20,7 @@ import androidx.compose.foundation.border
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -87,6 +89,8 @@ import com.nkapps.nkmuzik.utils.ShareUtils
 import java.util.Locale
 import kotlin.math.roundToInt
 
+private enum class SeekSide { LEFT, RIGHT }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NowPlayingBottomSheet(
@@ -109,8 +113,37 @@ fun NowPlayingBottomSheet(
     var showLyrics by remember { mutableStateOf(false) }
     var showQueueBottomSheet by remember { mutableStateOf(false) }
 
+    var seekSide by remember { mutableStateOf<SeekSide?>(null) }
+    var seekSeconds by remember { mutableIntStateOf(0) }
+    var lastTapTime by remember { mutableLongStateOf(0L) }
+    var lastTapSide by remember { mutableStateOf<SeekSide?>(null) }
+    var activeArrowStep by remember { mutableIntStateOf(-1) }
+    var sweepTrigger by remember { mutableIntStateOf(0) }
+
     val currentPosition by viewModel.currentPosition.collectAsState()
     val duration by viewModel.duration.collectAsState()
+
+    LaunchedEffect(sweepTrigger) {
+        if (sweepTrigger > 0) {
+            activeArrowStep = 0
+            kotlinx.coroutines.delay(200)
+            activeArrowStep = 1
+            kotlinx.coroutines.delay(200)
+            activeArrowStep = 2
+            kotlinx.coroutines.delay(220)
+            activeArrowStep = -1
+        }
+    }
+
+    LaunchedEffect(seekSeconds) {
+        if (seekSeconds > 0) {
+            kotlinx.coroutines.delay(800)
+            seekSide = null
+            seekSeconds = 0
+            lastTapSide = null
+            activeArrowStep = -1
+        }
+    }
     val repeatMode by viewModel.repeatMode.collectAsState()
     val isShuffleEnabled by viewModel.isShuffleEnabled.collectAsState()
 
@@ -526,6 +559,33 @@ fun NowPlayingBottomSheet(
                                         .sizeIn(maxWidth = 360.dp, maxHeight = 360.dp)
                                         .clip(MaterialTheme.shapes.large)
                                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                        .pointerInput(pageTrack.videoId) {
+                                            detectTapGestures(
+                                                onTap = { offset ->
+                                                    val now = System.currentTimeMillis()
+                                                    val isRight = offset.x > size.width / 2
+                                                    val clickedSide = if (isRight) SeekSide.RIGHT else SeekSide.LEFT
+
+                                                    if (now - lastTapTime < 450 && (lastTapSide == clickedSide || lastTapSide == null)) {
+                                                        if (seekSeconds == 0) {
+                                                            seekSeconds = 10
+                                                        } else {
+                                                            seekSeconds += 10
+                                                        }
+                                                        seekSide = clickedSide
+                                                        lastTapSide = clickedSide
+                                                        sweepTrigger++
+
+                                                        val deltaMs = if (clickedSide == SeekSide.RIGHT) 10_000L else -10_000L
+                                                        val newPos = (currentPosition + deltaMs).coerceIn(0L, duration)
+                                                        viewModel.seekTo(newPos)
+                                                    } else {
+                                                        lastTapSide = clickedSide
+                                                    }
+                                                    lastTapTime = now
+                                                }
+                                            )
+                                        }
                                 ) {
                                     val artworkModel = ArtworkUtils.getArtworkModel(
                                         context,
@@ -548,6 +608,60 @@ fun NowPlayingBottomSheet(
                                             )
                                         }
                                     )
+
+                                    if (seekSide != null && pageTrack.videoId == track.videoId) {
+                                        val isRight = (seekSide == SeekSide.RIGHT)
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxHeight()
+                                                .fillMaxWidth(0.5f)
+                                                .align(if (isRight) Alignment.CenterEnd else Alignment.CenterStart)
+                                                .background(
+                                                    Brush.horizontalGradient(
+                                                        if (isRight) listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))
+                                                        else listOf(Color.Black.copy(alpha = 0.65f), Color.Transparent)
+                                                    )
+                                                ),
+                                            contentAlignment = if (isRight) Alignment.CenterEnd else Alignment.CenterStart
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                modifier = Modifier.padding(
+                                                    start = if (isRight) 0.dp else 20.dp,
+                                                    end = if (isRight) 20.dp else 0.dp
+                                                )
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    if (isRight) {
+                                                        val a0 = if (activeArrowStep == 0) 1f else 0f
+                                                        val a1 = if (activeArrowStep == 1) 1f else 0f
+                                                        val a2 = if (activeArrowStep == 2) 1f else 0f
+                                                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White.copy(alpha = a0), modifier = Modifier.size(22.dp))
+                                                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White.copy(alpha = a1), modifier = Modifier.size(22.dp))
+                                                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White.copy(alpha = a2), modifier = Modifier.size(22.dp))
+                                                    } else {
+                                                        val a2 = if (activeArrowStep == 0) 1f else 0f
+                                                        val a1 = if (activeArrowStep == 1) 1f else 0f
+                                                        val a0 = if (activeArrowStep == 2) 1f else 0f
+                                                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White.copy(alpha = a2), modifier = Modifier.size(22.dp).graphicsLayer { rotationZ = 180f })
+                                                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White.copy(alpha = a1), modifier = Modifier.size(22.dp).graphicsLayer { rotationZ = 180f })
+                                                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White.copy(alpha = a0), modifier = Modifier.size(22.dp).graphicsLayer { rotationZ = 180f })
+                                                    }
+                                                }
+
+                                                Spacer(modifier = Modifier.height(4.dp))
+
+                                                Text(
+                                                    text = "$seekSeconds saniye",
+                                                    style = MaterialTheme.typography.titleMedium.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 13.sp
+                                                    ),
+                                                    color = Color.White
+                                                )
+                                            }
+                                        }
+                                    }
 
                                     if (pageTrack.videoId == track.videoId) {
                                         val coverFavoriteTint = if (isDarkTheme) yellowColor else Color.White
@@ -886,15 +1000,21 @@ fun NowPlayingBottomSheet(
             videoId = track.videoId
         )
 
-        com.nkapps.nkmuzik.ui.common.EditTrackDialog(
+        com.nkapps.nkmuzik.ui.common.EditTrackScreen(
             track = localTrack,
             isSaving = isSavingEdit,
-            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
+            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri, newLyrics ->
                 isSavingEdit = true
-                viewModel.updateLocalTrackMetaData(localTrack, newTitle, newArtist, newAlbum, newArtworkUri) {
+                viewModel.updateLocalTrackMetaData(
+                    track = localTrack,
+                    newTitle = newTitle,
+                    newArtist = newArtist,
+                    newAlbum = newAlbum,
+                    newArtworkUri = newArtworkUri,
+                    newLyrics = newLyrics
+                ) {
                     isSavingEdit = false
                     showEditDialog = false
-                    onDismiss()
                 }
             },
             onDismiss = { showEditDialog = false }
@@ -1032,22 +1152,41 @@ fun QueueBottomSheet(
                 val itemHeightPx = with(density) { 68.dp.toPx() }
                 var measuredItemHeightPx by remember { mutableFloatStateOf(itemHeightPx) }
 
+                var draggedItemKey by remember { mutableStateOf<String?>(null) }
                 var draggedStartIndex by remember { mutableStateOf<Int?>(null) }
-                var draggedCurrentIndex by remember { mutableStateOf<Int?>(null) }
                 var dragOffsetY by remember { mutableFloatStateOf(0f) }
 
-                val stableKeys = remember(queueItems) {
-                    val counts = HashMap<String, Int>()
-                    queueItems.map { item ->
-                        val baseKey = (item.videoId.ifBlank { item.url }).ifBlank { item.title }
-                        val count = counts.getOrDefault(baseKey, 0)
-                        counts[baseKey] = count + 1
-                        "${baseKey}_$count"
+                var localQueueItems by remember { mutableStateOf(queueItems) }
+                
+                LaunchedEffect(queueItems) {
+                    if (draggedItemKey == null) {
+                        localQueueItems = queueItems
                     }
                 }
 
-                LaunchedEffect(draggedCurrentIndex, dragOffsetY) {
-                    val currentIdx = draggedCurrentIndex ?: return@LaunchedEffect
+                val stableKeyMap = remember { java.util.IdentityHashMap<OnlineSearchResultDto, String>() }
+                val stableKeys = remember(localQueueItems) {
+                    localQueueItems.map { item ->
+                        var key = stableKeyMap[item]
+                        if (key == null) {
+                            key = java.util.UUID.randomUUID().toString()
+                            stableKeyMap[item] = key
+                        }
+                        key
+                    }
+                }
+                
+                val playingTrack = queueItems.getOrNull(currentQueueIndex)
+
+                val currentTargetIndex = remember(draggedStartIndex, dragOffsetY, measuredItemHeightPx, localQueueItems.size) {
+                    val startIdx = draggedStartIndex ?: return@remember null
+                    val effectiveHeight = if (measuredItemHeightPx > 0f) measuredItemHeightPx else itemHeightPx
+                    val steps = (dragOffsetY / effectiveHeight).roundToInt()
+                    (startIdx + steps).coerceIn(0, localQueueItems.size - 1)
+                }
+
+                LaunchedEffect(currentTargetIndex, dragOffsetY) {
+                    val currentIdx = currentTargetIndex ?: return@LaunchedEffect
                     val layoutInfo = listState.layoutInfo
                     val visibleItems = layoutInfo.visibleItemsInfo
                     if (visibleItems.isEmpty()) return@LaunchedEffect
@@ -1055,7 +1194,7 @@ fun QueueBottomSheet(
                     val firstVisible = visibleItems.first().index
                     val lastVisible = visibleItems.last().index
 
-                    if (currentIdx >= lastVisible - 1 && currentIdx < queueItems.size - 1) {
+                    if (currentIdx >= lastVisible - 1 && currentIdx < localQueueItems.size - 1) {
                         listState.scrollBy(itemHeightPx)
                     } else if (currentIdx <= firstVisible + 1 && currentIdx > 0) {
                         listState.scrollBy(-itemHeightPx)
@@ -1071,33 +1210,16 @@ fun QueueBottomSheet(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     itemsIndexed(
-                        items = queueItems,
+                        items = localQueueItems,
                         key = { index, _ -> stableKeys.getOrElse(index) { index } }
                     ) { index, item ->
                         val itemKey = stableKeys.getOrElse(index) { "$index" }
-                        val isPlayingItem = index == currentQueueIndex
+                        val isPlayingItem = (item === playingTrack || item == playingTrack)
                         var showTrackMenu by remember { mutableStateOf(false) }
-                        val isBeingDragged = (draggedStartIndex == index)
+                        val currentItemIndex by rememberUpdatedState(index)
+                        val isBeingDragged = (draggedItemKey == itemKey)
 
-                        val targetItemOffset = remember(draggedStartIndex, draggedCurrentIndex, index, measuredItemHeightPx) {
-                            val startIdx = draggedStartIndex
-                            val currentIdx = draggedCurrentIndex
-                            val itemHeight = if (measuredItemHeightPx > 0f) measuredItemHeightPx else itemHeightPx
-
-                            if (startIdx != null && currentIdx != null && startIdx != currentIdx) {
-                                if (startIdx < currentIdx && index in (startIdx + 1)..currentIdx) {
-                                    -itemHeight
-                                } else if (startIdx > currentIdx && index in currentIdx..<startIdx) {
-                                    itemHeight
-                                } else 0f
-                            } else 0f
-                        }
-
-                        val animatedOffset by animateFloatAsState(
-                            targetValue = if (isBeingDragged) dragOffsetY else targetItemOffset,
-                            animationSpec = tween(durationMillis = 150, easing = LinearOutSlowInEasing),
-                            label = "itemOffset"
-                        )
+                        val animatedOffset = if (isBeingDragged) dragOffsetY else 0f
 
                         val cardBg = MaterialTheme.colorScheme.surfaceContainer
                         val sheenBrush = if (isPlayingItem) {
@@ -1133,42 +1255,60 @@ fun QueueBottomSheet(
                                     translationY = animatedOffset
                                 }
                                 .clip(MaterialTheme.shapes.medium)
-                                .pointerInput(queueItems.size) {
+                                .pointerInput(itemKey) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = {
-                                            draggedStartIndex = index
-                                            draggedCurrentIndex = index
+                                            draggedItemKey = itemKey
+                                            draggedStartIndex = localQueueItems.indexOfFirst { stableKeys[localQueueItems.indexOf(it)] == itemKey }
                                             dragOffsetY = 0f
                                         },
                                         onDragEnd = {
-                                            val startIdx = draggedStartIndex
-                                            val currentIdx = draggedCurrentIndex
-                                            if (startIdx != null && currentIdx != null && startIdx != currentIdx) {
-                                                viewModel.reorderQueue(startIdx, currentIdx)
+                                            val finalIdx = draggedStartIndex
+                                            val originalIdx = queueItems.indexOfFirst { stableKeys[queueItems.indexOf(it)] == itemKey }
+                                            
+                                            if (originalIdx != -1 && finalIdx != null && originalIdx != finalIdx) {
+                                                viewModel.reorderQueue(originalIdx, finalIdx)
                                             }
+                                            
+                                            draggedItemKey = null
                                             draggedStartIndex = null
-                                            draggedCurrentIndex = null
                                             dragOffsetY = 0f
                                         },
                                         onDragCancel = {
+                                            localQueueItems = queueItems
+                                            draggedItemKey = null
                                             draggedStartIndex = null
-                                            draggedCurrentIndex = null
                                             dragOffsetY = 0f
                                         },
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             dragOffsetY += dragAmount.y
-                                            val startIdx = draggedStartIndex ?: return@detectDragGesturesAfterLongPress
+                                            
+                                            val currentIdx = draggedStartIndex ?: return@detectDragGesturesAfterLongPress
                                             val effectiveHeight = if (measuredItemHeightPx > 0f) measuredItemHeightPx else itemHeightPx
-
-                                            val steps = (dragOffsetY / effectiveHeight).roundToInt()
-                                            val newTargetIndex = (startIdx + steps).coerceIn(0, queueItems.size - 1)
-                                            draggedCurrentIndex = newTargetIndex
+                                            
+                                            if (dragOffsetY > effectiveHeight * 0.5f && currentIdx < localQueueItems.size - 1) {
+                                                val list = localQueueItems.toMutableList()
+                                                val movedItem = list.removeAt(currentIdx)
+                                                list.add(currentIdx + 1, movedItem)
+                                                localQueueItems = list
+                                                
+                                                draggedStartIndex = currentIdx + 1
+                                                dragOffsetY -= effectiveHeight
+                                            } else if (dragOffsetY < -effectiveHeight * 0.5f && currentIdx > 0) {
+                                                val list = localQueueItems.toMutableList()
+                                                val movedItem = list.removeAt(currentIdx)
+                                                list.add(currentIdx - 1, movedItem)
+                                                localQueueItems = list
+                                                
+                                                draggedStartIndex = currentIdx - 1
+                                                dragOffsetY += effectiveHeight
+                                            }
                                         }
                                     )
                                 }
                                 .clickable {
-                                    if (draggedStartIndex == null) {
+                                    if (draggedItemKey == null) {
                                         viewModel.skipToQueueItem(index)
                                     }
                                 },

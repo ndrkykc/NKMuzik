@@ -45,7 +45,13 @@ object ArtworkEmbedder {
         artworkFile: File?,
         title: String? = null,
         artist: String? = null,
-        album: String? = null
+        album: String? = null,
+        composer: String? = null,
+        year: String? = null,
+        genre: String? = null,
+        trackNumber: String? = null,
+        comment: String? = null,
+        lyrics: String? = null
     ): Boolean {
         if (!audioFile.exists() || audioFile.length() <= 0) return false
 
@@ -54,35 +60,37 @@ object ArtworkEmbedder {
             val tag = audioFileObj.getTagOrCreateAndSetDefault() ?: return false
 
             if (!title.isNullOrBlank()) {
-                try {
-                    tag.setField(FieldKey.TITLE, title)
-                } catch (_: Throwable) {
-                    // Ignore individual title field write failures
-                }
+                try { tag.setField(FieldKey.TITLE, title) } catch (_: Throwable) {}
             }
-
             if (!artist.isNullOrBlank()) {
-                try {
-                    tag.setField(FieldKey.ARTIST, artist)
-                } catch (_: Throwable) {
-                    // Ignore individual artist field write failures
-                }
+                try { tag.setField(FieldKey.ARTIST, artist) } catch (_: Throwable) {}
             }
-
             if (!album.isNullOrBlank()) {
-                try {
-                    tag.setField(FieldKey.ALBUM, album)
-                } catch (_: Throwable) {
-                    // Ignore individual album field write failures
-                }
+                try { tag.setField(FieldKey.ALBUM, album) } catch (_: Throwable) {}
+            }
+            if (!composer.isNullOrBlank()) {
+                try { tag.setField(FieldKey.COMPOSER, composer) } catch (_: Throwable) {}
+            }
+            if (!year.isNullOrBlank()) {
+                try { tag.setField(FieldKey.YEAR, year) } catch (_: Throwable) {}
+            }
+            if (!genre.isNullOrBlank()) {
+                try { tag.setField(FieldKey.GENRE, genre) } catch (_: Throwable) {}
+            }
+            if (!trackNumber.isNullOrBlank()) {
+                try { tag.setField(FieldKey.TRACK, trackNumber) } catch (_: Throwable) {}
+            }
+            if (!comment.isNullOrBlank()) {
+                try { tag.setField(FieldKey.COMMENT, comment) } catch (_: Throwable) {}
+            }
+            if (!lyrics.isNullOrBlank()) {
+                try { tag.setField(FieldKey.LYRICS, lyrics) } catch (_: Throwable) {}
             }
 
             if (artworkFile != null && artworkFile.exists() && artworkFile.length() > 0) {
                 try {
                     tag.deleteArtworkField()
-                } catch (_: Throwable) {
-                    // Ignore failure when clearing existing artwork
-                }
+                } catch (_: Throwable) {}
 
                 val artwork = ArtworkFactory.createArtworkFromFile(artworkFile)
                 if (artwork != null) {
@@ -93,8 +101,6 @@ object ArtworkEmbedder {
             AudioFileIO.write(audioFileObj)
             true
         } catch (_: Throwable) {
-            // Safe try-catch wrapper: if tagging fails for any unusual or unsupported format,
-            // return false so the caller's audio file remains completely intact and successful.
             false
         }
     }

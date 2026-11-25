@@ -322,12 +322,19 @@ fun MediaActionBottomSheet(
             videoId = track.videoId
         )
 
-        com.nkapps.nkmuzik.ui.common.EditTrackDialog(
+        com.nkapps.nkmuzik.ui.common.EditTrackScreen(
             track = localTrack,
             isSaving = isSavingEdit,
-            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
+            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri, newLyrics ->
                 isSavingEdit = true
-                viewModel?.updateLocalTrackMetaData(localTrack, newTitle, newArtist, newAlbum, newArtworkUri) {
+                viewModel?.updateLocalTrackMetaData(
+                    track = localTrack,
+                    newTitle = newTitle,
+                    newArtist = newArtist,
+                    newAlbum = newAlbum,
+                    newArtworkUri = newArtworkUri,
+                    newLyrics = newLyrics
+                ) {
                     isSavingEdit = false
                     showEditDialog = false
                     onDismiss()

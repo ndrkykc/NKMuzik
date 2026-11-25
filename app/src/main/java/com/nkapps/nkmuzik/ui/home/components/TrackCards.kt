@@ -64,7 +64,6 @@ import com.nkapps.nkmuzik.data.model.LocalTrack
 import com.nkapps.nkmuzik.data.model.OnlineSearchResultDto
 import com.nkapps.nkmuzik.ui.common.DeleteTrackConfirmationDialog
 import com.nkapps.nkmuzik.ui.common.TrackInfoDialog
-import com.nkapps.nkmuzik.ui.common.EditTrackDialog
 import com.nkapps.nkmuzik.ui.library.AddToPlaylistDialog
 import com.nkapps.nkmuzik.ui.search.SearchViewModel
 import com.nkapps.nkmuzik.ui.theme.MysticGoldMat
@@ -353,12 +352,19 @@ fun LocalTrackItemCard(
 
     if (showEditDialog) {
         var isSavingEdit by remember { mutableStateOf(false) }
-        EditTrackDialog(
+        com.nkapps.nkmuzik.ui.common.EditTrackScreen(
             track = track,
             isSaving = isSavingEdit,
-            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
+            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri, newLyrics ->
                 isSavingEdit = true
-                viewModel.updateLocalTrackMetaData(track, newTitle, newArtist, newAlbum, newArtworkUri) {
+                viewModel.updateLocalTrackMetaData(
+                    track = track,
+                    newTitle = newTitle,
+                    newArtist = newArtist,
+                    newAlbum = newAlbum,
+                    newArtworkUri = newArtworkUri,
+                    newLyrics = newLyrics
+                ) {
                     isSavingEdit = false
                     showEditDialog = false
                 }
@@ -639,18 +645,30 @@ fun TrackCard(
             videoId = track.videoId
         )
 
-        EditTrackDialog(
-            track = localTrack,
-            isSaving = isSavingEdit,
-            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
-                isSavingEdit = true
-                viewModel.updateLocalTrackMetaData(localTrack, newTitle, newArtist, newAlbum, newArtworkUri) {
-                    isSavingEdit = false
-                    showEditDialog = false
-                }
-            },
-            onDismiss = { showEditDialog = false }
-        )
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { if (!isSavingEdit) showEditDialog = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            com.nkapps.nkmuzik.ui.common.EditTrackScreen(
+                track = localTrack,
+                isSaving = isSavingEdit,
+                onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri, newLyrics ->
+                    isSavingEdit = true
+                    viewModel.updateLocalTrackMetaData(
+                        track = localTrack,
+                        newTitle = newTitle,
+                        newArtist = newArtist,
+                        newAlbum = newAlbum,
+                        newArtworkUri = newArtworkUri,
+                        newLyrics = newLyrics
+                    ) {
+                        isSavingEdit = false
+                        showEditDialog = false
+                    }
+                },
+                onDismiss = { showEditDialog = false }
+            )
+        }
     }
 
     if (showAddToPlaylistDialog) {
@@ -932,18 +950,30 @@ fun LocalTrackGridCard(
     var showEditDialog by remember { mutableStateOf(false) }
     if (showEditDialog) {
         var isSavingEdit by remember { mutableStateOf(false) }
-        EditTrackDialog(
-            track = track,
-            isSaving = isSavingEdit,
-            onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri ->
-                isSavingEdit = true
-                viewModel.updateLocalTrackMetaData(track, newTitle, newArtist, newAlbum, newArtworkUri) {
-                    isSavingEdit = false
-                    showEditDialog = false
-                }
-            },
-            onDismiss = { showEditDialog = false }
-        )
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { if (!isSavingEdit) showEditDialog = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            com.nkapps.nkmuzik.ui.common.EditTrackScreen(
+                track = track,
+                isSaving = isSavingEdit,
+                onConfirm = { newTitle, newArtist, newAlbum, newArtworkUri, newLyrics ->
+                    isSavingEdit = true
+                    viewModel.updateLocalTrackMetaData(
+                        track = track,
+                        newTitle = newTitle,
+                        newArtist = newArtist,
+                        newAlbum = newAlbum,
+                        newArtworkUri = newArtworkUri,
+                        newLyrics = newLyrics
+                    ) {
+                        isSavingEdit = false
+                        showEditDialog = false
+                    }
+                },
+                onDismiss = { showEditDialog = false }
+            )
+        }
     }
 
     if (showDeleteDialog) {

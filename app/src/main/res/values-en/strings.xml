@@ -209,6 +209,12 @@
     <string name="edit_track_name">Track Name</string>
     <string name="edit_track_artist">Artist</string>
     <string name="edit_track_album">Album</string>
+    <string name="edit_track_composer">Composer</string>
+    <string name="edit_track_year">Release Year</string>
+    <string name="edit_track_genre">Genre</string>
+    <string name="edit_track_number">Track Number</string>
+    <string name="edit_track_comment">Comment</string>
+    <string name="edit_track_lyrics">Lyrics</string>
     <string name="edit_track_change_cover">Change Cover</string>
     <string name="edit_track_saving">Saving...</string>
     <string name="edit_track_save">Save</string>

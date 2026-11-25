@@ -209,6 +209,12 @@
     <string name="edit_track_name">Şarkı Adı</string>
     <string name="edit_track_artist">Sanatçı</string>
     <string name="edit_track_album">Albüm</string>
+    <string name="edit_track_composer">Besteci / Beste</string>
+    <string name="edit_track_year">Çıkış Yılı</string>
+    <string name="edit_track_genre">Müzik Türü / Tarz</string>
+    <string name="edit_track_number">Parça Numarası</string>
+    <string name="edit_track_comment">Açıklama / Yorum</string>
+    <string name="edit_track_lyrics">Şarkı Sözleri</string>
     <string name="edit_track_change_cover">Görseli Değiştir</string>
     <string name="edit_track_saving">Kaydediliyor...</string>
     <string name="edit_track_save">Kaydet</string>
