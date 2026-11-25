@@ -798,12 +798,12 @@ fun NowPlayingBottomSheet(
                 }
 
                 val playPauseBg = if (isDarkTheme) {
-                    Color(0xFF22334C)
+                    Color.White
                 } else {
                     Color(0xFFE0E0E0)
                 }
                 val playPauseIconTint = if (isDarkTheme) {
-                    Color.White
+                    DeepNightBlue
                 } else {
                     Color.Black
                 }
