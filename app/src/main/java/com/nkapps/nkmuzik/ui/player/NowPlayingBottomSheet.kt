@@ -820,7 +820,7 @@ fun NowPlayingBottomSheet(
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = stringResource(R.string.action_play),
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier.size(42.dp),
                         tint = playPauseIconTint
                     )
                 }
