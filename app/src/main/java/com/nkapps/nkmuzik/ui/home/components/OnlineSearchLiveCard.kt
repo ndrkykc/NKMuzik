@@ -28,6 +28,11 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -105,12 +110,6 @@ fun OnlineSearchLiveCard(
         onDownload()
     }
 
-    val onPlayStreamClick: () -> Unit = {
-        focusManager.clearFocus()
-        keyboardController?.hide()
-        onPlayStream()
-    }
-
     val onCardBodyClick: () -> Unit = {
         focusManager.clearFocus()
         keyboardController?.hide()
@@ -118,18 +117,35 @@ fun OnlineSearchLiveCard(
     }
 
     val cardBg = MaterialTheme.colorScheme.surfaceContainer
-    val sheenBrush = Brush.horizontalGradient(
-        listOf(
-            cardBg,
-            MysticGoldMat.copy(alpha = 0.10f)
+    val isDarkTheme = MaterialTheme.colorScheme.background == DeepNightBlue
+    
+    val containerColor = if (isCurrentlyPlayingTrack) {
+        if (isDarkTheme) MysticGoldMat.copy(alpha = 0.20f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+    } else {
+        cardBg
+    }
+    
+    val sheenBrush = if (isCurrentlyPlayingTrack) {
+        Brush.horizontalGradient(
+            listOf(
+                Color.Transparent,
+                if (isDarkTheme) MysticGoldMat.copy(alpha = 0.35f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+            )
         )
-    )
+    } else {
+        Brush.horizontalGradient(
+            listOf(
+                cardBg,
+                MysticGoldMat.copy(alpha = 0.10f)
+            )
+        )
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onCardBodyClick),
-        colors = CardDefaults.cardColors(containerColor = cardBg)
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Box(
             modifier = Modifier
@@ -190,120 +206,69 @@ fun OnlineSearchLiveCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val isDarkTheme = MaterialTheme.colorScheme.background == DeepNightBlue
-                        val playButtonContainerColor = when {
-                            isCurrentlyPlayingTrack -> if (isDarkTheme) MysticGoldMat.copy(alpha = 0.20f) else MaterialTheme.colorScheme.primaryContainer
-                            else -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
-                        }
-                        val playButtonContentColor = when {
-                            isCurrentlyPlayingTrack -> if (isDarkTheme) MysticGoldMat else MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
-                        val playButtonBorderColor = when {
-                            isCurrentlyPlayingTrack -> if (isDarkTheme) MysticGoldMat else MaterialTheme.colorScheme.primary
-                            else -> MysticGoldMat.copy(alpha = 0.60f)
-                        }
-
-                        FilledTonalButton(
-                            onClick = onPlayStreamClick,
-                            border = BorderStroke(1.dp, playButtonBorderColor),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = playButtonContainerColor,
-                                contentColor = playButtonContentColor
-                            ),
-                            modifier = Modifier
-                                .height(34.dp)
-                                .defaultMinSize(minWidth = 84.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = stringResource(R.string.action_listen),
-                                modifier = Modifier.size(16.dp),
-                                tint = playButtonContentColor
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = stringResource(R.string.action_listen),
-                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = if (isCurrentlyPlayingTrack) FontWeight.Bold else FontWeight.SemiBold)
-                            )
-                        }
-
-                        if (enableDownloads) {
-                            when (downloadInfoStatus) {
-                                DownloadStatus.DOWNLOADING -> {
-                                    FilledTonalButton(
-                                        onClick = { viewModel.cancelDownload(track.videoId) },
-                                        border = BorderStroke(1.dp, MysticGoldMat),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                                        modifier = Modifier
-                                            .height(34.dp)
-                                            .defaultMinSize(minWidth = 84.dp)
-                                    ) {
-                                        CircularProgressIndicator(
-                                            progress = { (if (downloadProgress > 0) downloadProgress / 100f else 0.05f).coerceIn(0f, 1f) },
-                                            modifier = Modifier.size(14.dp),
-                                            strokeWidth = 2.dp,
-                                            color = MysticGoldMat,
-                                            trackColor = MysticGoldMat.copy(alpha = 0.2f)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    if (enableDownloads) {
+                        androidx.compose.animation.AnimatedContent(
+                            targetState = downloadInfoStatus,
+                            label = "downloadStatusAnim"
+                        ) { status ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                when (status) {
+                                    DownloadStatus.DOWNLOADING -> {
+                                        Text(
+                                            text = "%$downloadProgress",
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MysticGoldMat
+                                            ),
+                                            modifier = Modifier.padding(end = 4.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("İptal", style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                                        IconButton(
+                                            onClick = { viewModel.cancelDownload(track.videoId) },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Close,
+                                                contentDescription = "İptal",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
-                                }
-                                DownloadStatus.COMPLETED -> {
-                                    FilledTonalButton(
-                                        onClick = {},
-                                        border = BorderStroke(1.dp, Color(0xFF4CAF50).copy(alpha = 0.60f)),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                                        modifier = Modifier
-                                            .height(34.dp)
-                                            .defaultMinSize(minWidth = 84.dp),
-                                        colors = ButtonDefaults.filledTonalButtonColors(
-                                            containerColor = Color(0xFF4CAF50).copy(alpha = 0.15f),
-                                            contentColor = Color(0xFF4CAF50)
-                                        )
-                                    ) {
-                                        Icon(
-                                            Icons.Default.CheckCircle,
-                                            contentDescription = "İndirildi",
-                                            modifier = Modifier.size(14.dp),
-                                            tint = Color(0xFF4CAF50)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("İndirildi", style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                                    DownloadStatus.COMPLETED -> {
+                                        IconButton(
+                                            onClick = { },
+                                            modifier = Modifier.size(36.dp),
+                                            enabled = false
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Check,
+                                                contentDescription = "İndirildi",
+                                                tint = Color(0xFF4CAF50)
+                                            )
+                                        }
                                     }
-                                }
-                                else -> {
-                                    FilledTonalButton(
-                                        onClick = onDownloadClick,
-                                        border = BorderStroke(1.dp, MysticGoldMat.copy(alpha = 0.60f)),
-                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
-                                        modifier = Modifier
-                                            .height(34.dp)
-                                            .defaultMinSize(minWidth = 84.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Download,
-                                            contentDescription = stringResource(R.string.action_download),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(stringResource(R.string.action_download), style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+                                    else -> {
+                                        IconButton(
+                                            onClick = onDownloadClick,
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Download,
+                                                contentDescription = stringResource(R.string.action_download),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
                     Box {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more))
