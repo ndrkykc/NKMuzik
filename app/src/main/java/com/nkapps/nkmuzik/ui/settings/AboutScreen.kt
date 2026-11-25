@@ -132,7 +132,7 @@ fun AboutScreen(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = stringResource(R.string.app_build_info, "1.2.0", 3),
+                text = stringResource(R.string.app_build_info, com.nkapps.nkmuzik.BuildConfig.VERSION_NAME, com.nkapps.nkmuzik.BuildConfig.VERSION_CODE),
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
@@ -161,34 +161,29 @@ fun AboutScreen(
 
                 val changelogItems = listOf(
                     ChangelogItemData(
-                        icon = Icons.Rounded.Mic,
-                        title = "Sesli Arama (Voice Search)",
-                        description = "Arama çubuğundaki mikrofona dokunarak sesle hızlı arama yapma."
+                        icon = Icons.Rounded.ColorLens,
+                        title = "🎨 Şarkı Düzenleyici",
+                        description = "Cihazınızdaki şarkıların kapağını, adını, sanatçısını ve sözlerini kalıcı olarak düzenleyebilirsiniz."
                     ),
                     ChangelogItemData(
-                        icon = Icons.Rounded.Image,
-                        title = "6'lı Özel Kapak Görseli Havuzu",
-                        description = "Albüm kapağı olmayan yerel müzikler için 6 adet özel kapak görselinden otomatik ve tutarlı dağıtım."
-                    ),
-                    ChangelogItemData(
-                        icon = Icons.Rounded.Notifications,
-                        title = "Bağımsız \"Gelişmiş Ayarlar\" Sayfası",
-                        description = "Kalıcı bildirim izinleri, arama geçmişini kaydetme ve tek tıkla arama geçmişini temizleme ekranı."
-                    ),
-                    ChangelogItemData(
-                        icon = Icons.Rounded.History,
-                        title = "Arama Geçmişi",
-                        description = "Arama çubuğuna dokunulduğunda geçmiş aramaların öncelikli listelenmesi."
+                        icon = Icons.Rounded.Timer,
+                        title = "⏩ Akıllı Hızlı Sarma",
+                        description = "Oynatıcı ekranında kapak görseline çift tıklayarak müziği 10'ar saniye ileri veya geri sarabilirsiniz."
                     ),
                     ChangelogItemData(
                         icon = Icons.Rounded.SortByAlpha,
-                        title = "Görünüm Modu Hafızası (Grid / Liste)",
-                        description = "Hatalar düzeltildi."
+                        title = "🇹🇷 Türkçe Karakter Desteği",
+                        description = "Arama sonuçlarında Türkçe karakter (ı, ş, ç vb.) sorunları tamamen çözüldü."
                     ),
                     ChangelogItemData(
-                        icon = Icons.Rounded.ColorLens,
-                        title = "YT Online",
-                        description = "Çevrimiçi müzik arama butonunun ve navigasyon alanı \"YT Online\" olarak yenilendi."
+                        icon = Icons.Rounded.History,
+                        title = "🔄 Pürüzsüz Sıralama",
+                        description = "Sıradaki parçalar listesinde şarkı taşıma işlemi artık titremesiz ve kusursuz."
+                    ),
+                    ChangelogItemData(
+                        icon = Icons.Rounded.WifiOff,
+                        title = "✨ Görsel İyileştirmeler",
+                        description = "Arama çubuğuna daktilo efekti eklendi ve tüm kapak görselleri yüksek (HD) kaliteye yükseltildi."
                     )
                 )
 
