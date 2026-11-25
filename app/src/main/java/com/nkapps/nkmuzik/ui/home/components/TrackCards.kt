@@ -89,7 +89,7 @@ fun LocalTrackItemCard(
     var showMenu by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+
     var showEditDialog by remember { mutableStateOf(false) }
     val dbPlaylists by viewModel.dbPlaylists.collectAsState()
     val favorites by viewModel.favorites.collectAsState()
@@ -309,14 +309,7 @@ fun LocalTrackItemCard(
                                         showEditDialog = true
                                     }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.delete)) },
-                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                    onClick = {
-                                        showMenu = false
-                                        showDeleteDialog = true
-                                    }
-                                )
+
                             }
                         }
                     }
@@ -373,13 +366,7 @@ fun LocalTrackItemCard(
         )
     }
 
-    if (showDeleteDialog) {
-        DeleteTrackConfirmationDialog(
-            trackTitle = track.title,
-            onConfirm = { viewModel.deleteTrack(track) },
-            onDismiss = { showDeleteDialog = false }
-        )
-    }
+
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -400,7 +387,7 @@ fun TrackCard(
     var showMenu by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+
     var showEditDialog by remember { mutableStateOf(false) }
     var isSavingEdit by remember { mutableStateOf(false) }
     val dbPlaylists by viewModel.dbPlaylists.collectAsState()
@@ -616,14 +603,7 @@ fun TrackCard(
                                         }
                                     )
                                 }
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.delete)) },
-                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                    onClick = {
-                                        showMenu = false
-                                        showDeleteDialog = true
-                                    }
-                                )
+
                             }
                         }
                     }
@@ -695,13 +675,7 @@ fun TrackCard(
         )
     }
 
-    if (showDeleteDialog) {
-        DeleteTrackConfirmationDialog(
-            trackTitle = track.title,
-            onConfirm = { viewModel.deleteTrack(track) },
-            onDismiss = { showDeleteDialog = false }
-        )
-    }
+
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -722,7 +696,7 @@ fun LocalTrackGridCard(
     var showMenu by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+
     val dbPlaylists by viewModel.dbPlaylists.collectAsState()
 
     val cardBg = MaterialTheme.colorScheme.surfaceContainer
@@ -907,14 +881,7 @@ fun LocalTrackGridCard(
                                 }
                             )
 
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.delete)) },
-                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    showMenu = false
-                                    showDeleteDialog = true
-                                }
-                            )
+
                         }
                     }
                 }
@@ -976,13 +943,7 @@ fun LocalTrackGridCard(
         }
     }
 
-    if (showDeleteDialog) {
-        DeleteTrackConfirmationDialog(
-            trackTitle = track.title,
-            onConfirm = { viewModel.deleteTrack(track) },
-            onDismiss = { showDeleteDialog = false }
-        )
-    }
+
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -1003,7 +964,7 @@ fun TrackGridCard(
     var showMenu by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+
     val dbPlaylists by viewModel.dbPlaylists.collectAsState()
 
     val cardBg = MaterialTheme.colorScheme.surfaceContainer
@@ -1186,14 +1147,7 @@ fun TrackGridCard(
                                 }
                             )
 
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.delete)) },
-                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    showMenu = false
-                                    showDeleteDialog = true
-                                }
-                            )
+
                         }
                     }
                 }
@@ -1225,11 +1179,5 @@ fun TrackGridCard(
         )
     }
 
-    if (showDeleteDialog) {
-        DeleteTrackConfirmationDialog(
-            trackTitle = track.title,
-            onConfirm = { viewModel.deleteTrack(track) },
-            onDismiss = { showDeleteDialog = false }
-        )
-    }
+
 }

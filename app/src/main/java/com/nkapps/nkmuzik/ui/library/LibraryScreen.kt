@@ -532,7 +532,7 @@ fun TrackRowCard(
     val context = LocalContext.current
     var isExpanded by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+
 
     val cardBg = MaterialTheme.colorScheme.surfaceContainer
     val sheenBrush = Brush.horizontalGradient(
@@ -697,14 +697,7 @@ fun TrackRowCard(
                                 }
                             )
 
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.delete)) },
-                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    isExpanded = false
-                                    showDeleteDialog = true
-                                }
-                            )
+
                         }
                     }
                 }
@@ -723,15 +716,7 @@ fun TrackRowCard(
         )
     }
 
-    if (showDeleteDialog) {
-        DeleteTrackConfirmationDialog(
-            trackTitle = track.title,
-            onConfirm = {
-                onDelete()
-            },
-            onDismiss = { showDeleteDialog = false }
-        )
-    }
+
 }
 
 @Composable

@@ -108,7 +108,7 @@ fun NowPlayingBottomSheet(
     var trackToAddToPlaylist by remember { mutableStateOf<OnlineSearchResultDto?>(null) }
     var showEqualizerDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+
     var showEditDialog by remember { mutableStateOf(false) }
     var showLyrics by remember { mutableStateOf(false) }
     var showQueueBottomSheet by remember { mutableStateOf(false) }
@@ -461,14 +461,7 @@ fun NowPlayingBottomSheet(
                                     }
                                 )
 
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.delete)) },
-                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                    onClick = {
-                                        showOptionsMenu = false
-                                        showDeleteDialog = true
-                                    }
-                                )
+
                             }
                         }
                     }
@@ -1021,18 +1014,7 @@ fun NowPlayingBottomSheet(
         )
     }
 
-    // Delete Confirmation Dialog
-    if (showDeleteDialog) {
-        DeleteTrackConfirmationDialog(
-            trackTitle = track.title,
-            onConfirm = {
-                viewModel.deleteTrack(track) {
-                    onDismiss()
-                }
-            },
-            onDismiss = { showDeleteDialog = false }
-        )
-    }
+
 }
 
 

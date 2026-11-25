@@ -87,7 +87,7 @@ fun OnlineSearchLiveCard(
     var showMenu by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+
     val dbPlaylists by viewModel.dbPlaylists.collectAsState()
     val currentPlayingTrack by viewModel.currentPlayingTrack.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
@@ -367,11 +367,5 @@ fun OnlineSearchLiveCard(
         )
     }
 
-    if (showDeleteDialog) {
-        DeleteTrackConfirmationDialog(
-            trackTitle = track.title,
-            onConfirm = { viewModel.deleteTrack(track) },
-            onDismiss = { showDeleteDialog = false }
-        )
-    }
+
 }

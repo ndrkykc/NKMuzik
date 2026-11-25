@@ -46,12 +46,12 @@ fun MediaActionBottomSheet(
     onRemoveFromPlaylist: (() -> Unit)? = null,
     onRemoveFromFavorites: (() -> Unit)? = null,
     onAddToQueue: (() -> Unit)? = null,
-    onDelete: (() -> Unit)? = null
+
 ) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState()
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+
     var showEditDialog by remember { mutableStateOf(false) }
     var isSavingEdit by remember { mutableStateOf(false) }
 
@@ -287,21 +287,7 @@ fun MediaActionBottomSheet(
                         Text(stringResource(R.string.action_edit), maxLines = 1)
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
 
-                    OutlinedButton(
-                        onClick = {
-                            showDeleteDialog = true
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.action_delete), maxLines = 1)
-                    }
                 }
             }
 
@@ -355,18 +341,5 @@ fun MediaActionBottomSheet(
         )
     }
 
-    if (showDeleteDialog) {
-        DeleteTrackConfirmationDialog(
-            trackTitle = track.title,
-            onConfirm = {
-                if (onDelete != null) {
-                    onDelete()
-                } else {
-                    viewModel?.deleteTrack(track)
-                }
-                onDismiss()
-            },
-            onDismiss = { showDeleteDialog = false }
-        )
-    }
+
 }

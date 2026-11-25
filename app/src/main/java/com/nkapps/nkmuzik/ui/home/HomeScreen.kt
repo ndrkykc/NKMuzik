@@ -1048,14 +1048,10 @@ fun HomeScreen(
                                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                                     ) {
                                                         items(filteredFavorites, key = { it.videoId }) { track ->
-                                                            val isSelected = selectedFavoriteVideoIds.contains(track.videoId)
                                                             TrackCard(
                                                                 track = track,
                                                                 viewModel = viewModel,
                                                                 onPlay = { viewModel.playStreamQueue(filteredFavorites, filteredFavorites.indexOf(track)) },
-                                                                isSelected = isSelected,
-                                                                isSelectionMode = selectedFavoriteVideoIds.isNotEmpty(),
-                                                                onSelectToggle = { viewModel.toggleFavoriteSelection(track.videoId) },
                                                                 isFavoritesTab = true,
                                                                 onRemoveFromFavorites = { viewModel.toggleFavorite(track) }
                                                             )
@@ -1070,14 +1066,10 @@ fun HomeScreen(
                                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                                     ) {
                                                         items(filteredFavorites, key = { it.videoId }) { track ->
-                                                            val isSelected = selectedFavoriteVideoIds.contains(track.videoId)
                                                             TrackGridCard(
                                                                 track = track,
                                                                 viewModel = viewModel,
                                                                 onPlay = { viewModel.playStreamQueue(filteredFavorites, filteredFavorites.indexOf(track)) },
-                                                                isSelected = isSelected,
-                                                                isSelectionMode = selectedFavoriteVideoIds.isNotEmpty(),
-                                                                onSelectToggle = { viewModel.toggleFavoriteSelection(track.videoId) },
                                                                 isFavoritesTab = true,
                                                                 onRemoveFromFavorites = { viewModel.toggleFavorite(track) }
                                                             )
@@ -1150,14 +1142,10 @@ fun HomeScreen(
                                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                                         ) {
                                                             items(groupTracks, key = { it.videoId }) { track ->
-                                                                val isSelected = selectedFavoriteVideoIds.contains(track.videoId)
                                                                 TrackCard(
                                                                     track = track,
                                                                     viewModel = viewModel,
                                                                     onPlay = { viewModel.playStreamQueue(groupTracks, groupTracks.indexOf(track)) },
-                                                                    isSelected = isSelected,
-                                                                    isSelectionMode = selectedFavoriteVideoIds.isNotEmpty(),
-                                                                    onSelectToggle = { viewModel.toggleFavoriteSelection(track.videoId) },
                                                                     isFavoritesTab = true,
                                                                     onRemoveFromFavorites = { viewModel.toggleFavorite(track) }
                                                                 )
@@ -1237,14 +1225,10 @@ fun HomeScreen(
                                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                                         ) {
                                                             items(groupTracks, key = { it.videoId }) { track ->
-                                                                val isSelected = selectedFavoriteVideoIds.contains(track.videoId)
                                                                 TrackCard(
                                                                     track = track,
                                                                     viewModel = viewModel,
                                                                     onPlay = { viewModel.playStreamQueue(groupTracks, groupTracks.indexOf(track)) },
-                                                                    isSelected = isSelected,
-                                                                    isSelectionMode = selectedFavoriteVideoIds.isNotEmpty(),
-                                                                    onSelectToggle = { viewModel.toggleFavoriteSelection(track.videoId) },
                                                                     isFavoritesTab = true,
                                                                     onRemoveFromFavorites = { viewModel.toggleFavorite(track) }
                                                                 )
@@ -1317,14 +1301,10 @@ fun HomeScreen(
                                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                                         ) {
                                                             items(groupTracks, key = { it.videoId }) { track ->
-                                                                val isSelected = selectedFavoriteVideoIds.contains(track.videoId)
                                                                 TrackCard(
                                                                     track = track,
                                                                     viewModel = viewModel,
                                                                     onPlay = { viewModel.playStreamQueue(groupTracks, groupTracks.indexOf(track)) },
-                                                                    isSelected = isSelected,
-                                                                    isSelectionMode = selectedFavoriteVideoIds.isNotEmpty(),
-                                                                    onSelectToggle = { viewModel.toggleFavoriteSelection(track.videoId) },
                                                                     isFavoritesTab = true,
                                                                     onRemoveFromFavorites = { viewModel.toggleFavorite(track) }
                                                                 )
